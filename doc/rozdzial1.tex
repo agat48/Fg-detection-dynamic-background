@@ -1,16 +1,21 @@
 \chapter{Wstęp}
 \label{cha:wstęp}
 
-Automatyzacja detekcji obiektów obserwowanej sceny jest jednym z kluczowych zagadnień. Nie może być ona jednak przeprowadzona poprawnie bez wcześniejszej dokładnej segmentacji tych obiektów.
-
-(Bla, bla, coś innego...)
+\paragraph{}
+Ilość produkowanej przez człowieka informacji w ostatnich latach gwałtownie wzrasta. Dynamiczny rozwój  Internetu i szeroko pojętej technologii  oraz wzrost jej dostępności na niemal całym świecie spowodował, iż o wiele prościej jest zarówno pozyskiwać wiedzę, jak i dzielić się nią. W przeciągu ostatnich czterdziestu lat, od czasu pojawienia się sieci komputerowej, poszerzyły się także możliwości przechowywania danych. Miniaturyzacja urządzeń wraz ze wzrostem jakości pozyskiwanych informacji sprzyjają coraz dalszemu rozwojowi technologii informacyjnej. Dlatego też tak ważna jest automatyzacja procesów analizy informacji, bez której pozyskiwanie istotnych faktów byłoby bardzo utrudnione, jeżeli nie niemożliwe. 
+\paragraph{}
+Jedną z dziedzin, która doświadcza ciągłego rozwoju, jest monitoring wizyjny. W większych miastach na kamery monitorujące można natknąć się nieomal na każdym kroku - począwszy od budynków, takich jak biurowce, strzeżone osiedla czy szkoły, po zintegrowane systemy monitoringu całego miasta. Można się spotkać nawet z monitoringiem podwodnym. Coraz wyższa jakość pozyskiwanego z kamer obrazu oraz wzrastająca liczba montowanych urządzeń powoduje, iż objętość danych uzyskiwanych w ten sposób nie przestaje się powiększać. Dlatego też monitoring oparty na analizie bieżącego materiału wideo przez człowieka staje się w dużej mierze niewystarczający.
+\paragraph{}
+Ograniczenia percepcji ludzkiego ciała powodują, iż w wielu przypadkach maszyny zaczynają przewyższać możliwości ludzi. Ciągłe skupianie uwagi na analizie obserwowanej przez operatora sceny może prowadzić do znużenia i wolniejszej detekcji ewentualnego zagrożenia. Nie bez znaczenia jest również fakt, iż kiedy na nagraniu nie ma wartkiej akcji - a tak zdarza się nieczęsto - uwaga obserwatora z czasem spada. Rzadko również zdarza się, że pracownik ma do czynienia z obrazem tylko z jednej kamery - najczęściej jest to kilka nagrań, wyświetlanych na osobnych urządzeniach, bądź na jednym monitorze z możliwością przełączania się między scenami. W obu przypadkach człowiek boryka się z ograniczeniami dotyczącymi równoczesnej analizy wielu scen. Czynniki te, u człowieka powodujące zmniejszoną zdolność percepcji, maszyn nie dotyczą. Mogą one zatem pomóc w uzyskaniu z obrazów istotnej informacji.
+\paragraph{}
+Abstrahując od hipotetycznej możliwości całkowitego zastąpienia człowieka maszyną w kwestii obserwacji i analizy obrazów, już samo wykrycie przez odpowiedni system zmian na scenie i zasygnalizowanie ich operatorowi znacznie zwiększa prawdopodobieństwo wykrycia nieprawidłowości. Możliwości obliczeniowe obecnych maszyn, ze szczególnym uwzględnieniem czasu wykonywania operacji, są powodem, dla którego empiryczne postrzeganie świata przez człowieka da się zastąpić właśnie odpowiednim systemem komputerowym. Twórcy oprogramowania takich systemów borykają się jednak z wieloma problemami. Jednym z głównych zagadnień jest kwestia wyeliminowania detekcji drobnego ruchu sceny, nieistotnego z punktu niesionej przez niego informacji - takiego jak nieznaczne drgania liści na wietrze, czy zmienne refleksy świetlne w wodzie płynącej w fontannie bądź innych zbiornikach wodnych. Bardzo rzadko zdarza się, iż na monitorowanej na zewnątrz budynku scenie nie występuje żadne z tych zjawisk, dlatego tak ważne jest rozwiązanie problemu. Standardowe podejścia w detekcji ruchu nie umożliwiają odseparowania tak wykrytego ruchu od większych zmian na nagraniu.
 
 %---------------------------------------------------------------------------
 
 \section{Cele pracy}
 \label{sec:celePracy}
 
-Celem niniejszej pracy jest przeanalizowanie i zaproponowanie rozwiązania zagadnienia segmentacji obiektów pierwszoplanowych przy obecności drobnego ruchu na scenie, który nie jest istotny ze względu na niesioną informację.
+Celem niniejszej pracy jest przeanalizowanie kilku dostępnych już udokumentowanych rozwiązań i zaproponowanie najlepiej sprawdzającego się z nich sposobu segmentacji obiektów pierwszoplanowych przy obecności drobnego ruchu na scenie. Zaimplementowane zostaną odpowiednie algorytmy oraz zbadane będą ich możliwości w kwestii szybkości i dokładności detekcji.
 
 
 %---------------------------------------------------------------------------
@@ -18,7 +23,7 @@ Celem niniejszej pracy jest przeanalizowanie i zaproponowanie rozwiązania zagad
 \section{Zawartość pracy}
 \label{sec:zawartoscPracy}
 
-W rodziale~\ref{cha:badania} przedstawiono dostępne na rynku algorytmy. Opisana jest metoda GMM~\cite{Rey09} ({\em Gaussian Mixture Models}), która cośtam.
+W rodziale~\ref{cha:analiza} przedstawiono dostępne na rynku algorytmy. 
 
 
 
