@@ -1,7 +1,11 @@
 \chapter{Wprowadzenie do tematyki pracy}
 \label{cha:tematykaPracy}
+\section{Segmentacja obiektów}
+(cośtam) często interesujące są jedynie obiekty znajdujące się na pierwszym planie. Tło bowiem nie niesie żadnej istotnej informacji.
+\section{Detekcja ruchu na scenie}
+Detekcja ruchu, czyli \textit{Motion Detection}, to sposób wykrywania przemieszczania się obiektów na scenie względem ich sąsiedztwa. Polega ona na analizie kolejnych ramek z sekwencji wideo i badaniu zmian następujących pomiędzy nimi.\\
+W wykrywaniu zmian pomagają algorytmy generacji tła. 
 \section{Biblioteka OpenCV}
-
 \begin{figure}
 \centering
 
@@ -9,4 +13,5 @@
 \caption{Logo biblioteki OpenCV \cite{OpenCVLogo}}
 %\floatfoot{Source: }
 \end{figure}
-
+OpenCV (ang. \textit{Open Source Computer Vision}) to dostępna od 2000 roku biblioteka, zawierająca implementacje najczęściej wykorzystywanych algorytmów wizyjnych. Jej główne zalety to dostępność na zasadach \textit{open source}, a także wieloplatformowość.\\
+Została ona napisana w języku C, jednak istnieją specjalne nakłądki, pozwalające korzystać z niej także m. in. w C++, C\#, Python i języku Java. Udostępniony publicznie jest nie tylko kod źródłowy, ale także i narzędzia, pozwalające na samodzielną kompilację biblioteki, co pozwala na używanie jej w wielu środowiskach programistycznych.
