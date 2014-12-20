@@ -1,12 +1,30 @@
 \chapter{Wprowadzenie do tematyki pracy}
 \label{cha:tematykaPracy}
-\section{Segmentacja obiektów}
-(cośtam) często interesujące są jedynie obiekty znajdujące się na pierwszym planie. Tło bowiem nie niesie żadnej istotnej informacji.
+Cyfrowa akwizycja obrazu pozwala na odwzorowanie widzialnej dla człowieka sceny w przestrzeni zdigitalizowanej. Takie przedstawienie obrazu umożliwia utrwalenie go na rozmaitych nośnikach pamięci i dostęp do niego w dowolnym momencie w przyszłości. Rejestrując zdjęcia z pewną częstotliwością i zachowaniem kolejności ich akwizycji otrzymuje się nagranie wideo. Pozwala ono śledzić zmiany na scenie następujące w czasie, takie jak ruch czy \textcolor{red}{zmiana} oświetlenia. Następujące po sobie obrazy zwane \textbf{ramkami} to \textbf{sekwencja wideo}.
+\section{Preprocessing}
+Choć dla człowieka informacje zawarte na obrazie są proste w interpretacji, maszyna ''widzi'' ramkę jako zwykły ciąg liczb. Dlatego aby dokonywać automatycznej detekcji pewnych zjawisk i zależności, należy poddać ją odpowiednim przekształceniom, pozwalającym wyekstrahować interesujące powiązania. Taki proces nazywa się przetwarzaniem wstępnym, czyli \textit{preprocessingiem}. W zależności od tego, jakie elementy ramki są w programie istotne, stosuje się różne metody uwydatnienia informacji. W książce \cite{i1823330731} opisane są najczęściej wykorzystywane algorytmy używane w takim procesie. W tej sekcji zostaną przedstawione niektóre z nich, istotne w kontekście niniejszej pracy.
+\subsection{Binaryzacja}
+Jest to jedna z podstawowych metod punktowego przetwarzania obrazu.  Pozwala odseparować istotne informacje na zdjęciu z pominięciem zależności mniej interesujących, takich jak na przykład konkretny poziom jasności, utrudniających tylko dalsze przetwarzanie ze względu na większą złożoność obliczeń. Obraz zostaje sprowadzony do postaci binarnej (zero-jedynkowej), gdzie najczęściej (w zależności od podejścia) 0 reprezentuje tło, 1 - interesujący obszar obrazu. \\
+Istnieje wiele metod binaryzacji, dlatego też można wybrać odpowiednią dla każdego algorytmu. Podstawowym problemem staje się jednak wyznaczenie odpowiedniego progu binaryzacji - ze względu na następującą w procesie radykalną redukcję informacji zawartych w obrazie, źle dobrany graniczny poziom jasności może doprowadzić do błędnej detekcji, w konsekwencji skutkującej złym działaniem programu. Dlatego też bardzo ważna jest znajomość rodzaju danych, z jakimi system przetwarzający będzie miał do czynienia - pozwoli to zastosować odpowiednią dla nich metodę obliczenia progu.
+\section{Analiza obrazu} 
+\subsection{Segmentacja obiektów}
+Po przekształceniach obrazu, uwydatniających zawarte w nim informacje, konieczne jest wyodrębnienie istotnych aspektów ramki. Służy do tego metoda zwana segmentacją obrazu, polegająca na podziale obrazu na segmenty odpowiadające konkretnym utrwalonym na nim elementom.
 \section{Detekcja ruchu na scenie}
 Detekcja ruchu, czyli \textit{Motion Detection}, to sposób wykrywania przemieszczania się obiektów na scenie względem ich sąsiedztwa. Polega ona na analizie kolejnych ramek z sekwencji wideo i badaniu zmian następujących pomiędzy nimi.\\
-W wykrywaniu zmian pomagają algorytmy generacji tła. 
+W wykrywaniu zmian pomagają algorytmy generacji tła.
+\section{Standardowe metody generacji tła}
+\subsection{Średnia bieżąca}
+\cite{collins2003mean}
+\subsection{Gaussian Mixture Model}
+\label{sec:GMM}
+\cite{zivkovic2004improved}
+\subsection{ViBE}
+\cite{barnich2011vibe}
+\subsection{PBAS}
+\cite{hofmann2012background}
+\section{Standardowe metody a dynamiczne tło}
 \section{Biblioteka OpenCV}
-\begin{figure}
+\begin{figure}[!htb]
 \centering
 
 \includegraphics[width=82px]{img/ocv_logo}
@@ -14,4 +32,4 @@ W wykrywaniu zmian pomagają algorytmy generacji tła.
 %\floatfoot{Source: }
 \end{figure}
 OpenCV (ang. \textit{Open Source Computer Vision}) to dostępna od 2000 roku biblioteka, zawierająca implementacje najczęściej wykorzystywanych algorytmów wizyjnych. Jej główne zalety to dostępność na zasadach \textit{open source}, a także wieloplatformowość.\\
-Została ona napisana w języku C, jednak istnieją specjalne nakłądki, pozwalające korzystać z niej także m. in. w C++, C\#, Python i języku Java. Udostępniony publicznie jest nie tylko kod źródłowy, ale także i narzędzia, pozwalające na samodzielną kompilację biblioteki, co pozwala na używanie jej w wielu środowiskach programistycznych.
+Została ona napisana w języku C, jednak istnieją specjalne nakładki, pozwalające korzystać z niej także m. in. w C++, C\#, Python i języku Java. Udostępniony publicznie jest nie tylko kod źródłowy, ale także i narzędzia, pozwalające na samodzielną kompilację biblioteki, co pozwala na używanie jej w wielu środowiskach programistycznych.
