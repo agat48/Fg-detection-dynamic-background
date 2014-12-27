@@ -23,6 +23,7 @@ Tensor przepływu pozwala na wykrycie ruchu pomiędzy kolejnymi ramkami nagrania
 \section{Weightless Neutral Networks}
 Praca \cite{6910014}
 \section{Self-tuning Background Subtraction Algorithm}
+\label{sec:BinWang}
 Choć w ostatnich latach możliwości obliczeniowe maszyn, zarówno pod względem ilości przetwarzanych danych, jak i prędkości, rozwijały się bardzo dynamicznie, obecni inżynierowie borykają się z problemami nie do przezwyciężenia. Częstotliwość taktowania procesorów o dotychczas stosowanej architekturze nie może być już bardziej zwiększana - spowodowane jest to fizycznymi ograniczeniami sprzętu. Sekwencyjne wykonywanie poleceń uzależnia więc czas działania algorytmu od prędkości obliczeniowej jednostki wykonującej operacje. Dla problemu opisywanego w tej pracy szybkość przetwarzania jest szczególnie ważna - standardowy format wideo to 25 klatek na sekundę. Oznacza to, iż w celu detekcji w czasie rzeczywistym, jedna ramka o określonej rozdzielczości musi zostać przetworzona w czasie 1/25 sekundy. Dlatego też autorzy rozwiązania opisanego w artykule \cite{6910012} postanowili zmierzyć się z tym problemem, opracowując metodę, która wykonuje potrzebne obliczenia dla każdego piksela niezależnie, dokonując klasyfikacji jedynie na podstawie historii jego jasności. Takie podejście umożliwia implementację w architekturze równoległej, jak choćby z wykorzystaniem mocy obliczeniowej GPU (ang. \textit{Graphics processing unit} - procesor graficzny) czy układów FPGA (ang. \textit{Field-programmable gate array}).
 
 \section{SuBSENSE}

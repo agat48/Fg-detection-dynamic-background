@@ -6,6 +6,16 @@ Choć dla człowieka informacje zawarte na obrazie są proste w interpretacji, m
 \subsection{Binaryzacja}
 Jest to jedna z podstawowych metod punktowego przetwarzania obrazu.  Pozwala odseparować istotne informacje na zdjęciu z pominięciem zależności mniej interesujących, takich jak na przykład konkretny poziom jasności, utrudniających tylko dalsze przetwarzanie ze względu na większą złożoność obliczeń. Obraz zostaje sprowadzony do postaci binarnej (zero-jedynkowej), gdzie najczęściej (w zależności od podejścia) 0 reprezentuje tło, 1 - interesujący obszar obrazu. \\
 Istnieje wiele metod binaryzacji, dlatego też można wybrać odpowiednią dla każdego algorytmu. Podstawowym problemem staje się jednak wyznaczenie odpowiedniego progu binaryzacji - ze względu na następującą w procesie radykalną redukcję informacji zawartych w obrazie, źle dobrany graniczny poziom jasności może doprowadzić do błędnej detekcji, w konsekwencji skutkującej złym działaniem programu. Dlatego też bardzo ważna jest znajomość rodzaju danych, z jakimi system przetwarzający będzie miał do czynienia - pozwoli to zastosować odpowiednią dla nich metodę obliczenia progu.
+\subsection{Przestrzenie barw}
+Przestrzeń barw to pewna matematyczna reprezentacja światła widzialnego w przestrzeni cyfrowej. W zależności od potrzeb stosowane są różne modele. Najpopularniejszymi są spotykane w urządzeniach elektronicznych trójkanałowe RGB (ang. \textit{Red Green Blue}) oraz komplementarny do niego, stosowany w druku CMYK (ang. \textit{Cyan Magenta Yellow blacK}), wykorzystujące właściwości ludzkiego wzroku determinujące sposób, w jaki człowiek odbiera barwy. Każdemu pikselowi obrazu są tu przypisane odpowiednie wartości na każdym kanale, na przykład czerwony piksel w reprezentacji RGB na kanale czerwonym (R) ma maksymalną wartość 255 (w 8-bitowej głębi kolorów), na niebieskim i zielonym po 0. Stosowane są one do łatwej do interpretacji przez człowieka reprezentacji cyfrowej kolorów na zdjęciach. Wprowadzają one jednak duże ograniczenia ze względu na ilość niesionej informacji. Akwizycja obrazu w innej przestrzeni pozwala na przykład na zastosowanie o wiele szerszego spektrum barw. Dlatego też często przy przetwarzaniu obrazów stosuje się inne modele, rozdzielające istotne dla maszyny informacje na oddzielne kanały, co umożliwia wydajniejsze i niekiedy dokładniejsze obliczenia na zdjęciach. \\
+W metodzie opisanej w rozdziale \ref{sec:BinWang}  używana jest przestrzeń YCbCr, oddzielająca kanał luminancji (Y), czyli poziomu jasności piksela, od kanałów chrominancji (Cb i Cr), przechowujących informację o jego odcieniu.
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=82px]{img/YCbCr}
+\caption{Reprezentacja płaszczyzny 
+CbCr dla stałej luminancji Y=0.5}
+%\floatfoot{Source: Wikipedia}
+\end{figure}
 \section{Analiza obrazu} 
 \subsection{Segmentacja obiektów}
 Po przekształceniach obrazu, uwydatniających zawarte w nim informacje, konieczne jest wyodrębnienie istotnych aspektów ramki. Służy do tego metoda zwana segmentacją obrazu, polegająca na podziale obrazu na segmenty odpowiadające konkretnym utrwalonym na nim elementom.
@@ -17,7 +27,7 @@ W wykrywaniu zmian pomagają algorytmy generacji tła.
 \cite{collins2003mean}
 \subsection{Gaussian Mixture Model}
 \label{sec:GMM}
-\cite{zivkovic2004improved}
+Metoda ta \cite{zivkovic2004improved} opiera się na obserwacji, iż obiekty tła, przy braku przemieszczających się obiektów na scenie, wykazują pewne zależności, które mogą zostać przedstawione za pomocą modeli statystycznych. Dlatego też wyodrębnienie pikseli nie pasujących do takiego modelu wiąże się z wykryciem ruchu na scenie. Jest to stosunkowo mało skomplikowany algorytm oparty na mechanizmie subtrakcji tła.
 \subsection{ViBE}
 \cite{barnich2011vibe}
 \subsection{PBAS}
