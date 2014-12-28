@@ -2,13 +2,66 @@
 \label{cha:tematykaPracy}
 Cyfrowa akwizycja obrazu pozwala na odwzorowanie widzialnej dla człowieka sceny w przestrzeni zdigitalizowanej. Takie przedstawienie obrazu umożliwia utrwalenie go na rozmaitych nośnikach pamięci i dostęp do niego w dowolnym momencie w przyszłości. Rejestrując zdjęcia z pewną częstotliwością i zachowaniem kolejności ich akwizycji otrzymuje się nagranie wideo. Pozwala ono śledzić zmiany na scenie następujące w czasie, takie jak ruch czy \textcolor{red}{zmiana} oświetlenia. Następujące po sobie obrazy zwane \textbf{ramkami} to \textbf{sekwencja wideo}.
 \section{Preprocessing}
-Choć dla człowieka informacje zawarte na obrazie są proste w interpretacji, maszyna ''widzi'' ramkę jako zwykły ciąg liczb. Dlatego aby dokonywać automatycznej detekcji pewnych zjawisk i zależności, należy poddać ją odpowiednim przekształceniom, pozwalającym wyekstrahować interesujące powiązania. Taki proces nazywa się przetwarzaniem wstępnym, czyli \textit{preprocessingiem}. W zależności od tego, jakie elementy ramki są w programie istotne, stosuje się różne metody uwydatnienia informacji. W książce \cite{i1823330731} opisane są najczęściej wykorzystywane algorytmy używane w takim procesie. W tej sekcji zostaną przedstawione niektóre z nich, istotne w kontekście niniejszej pracy.
-\subsection{Binaryzacja}
-Jest to jedna z podstawowych metod punktowego przetwarzania obrazu.  Pozwala odseparować istotne informacje na zdjęciu z pominięciem zależności mniej interesujących, takich jak na przykład konkretny poziom jasności, utrudniających tylko dalsze przetwarzanie ze względu na większą złożoność obliczeń. Obraz zostaje sprowadzony do postaci binarnej (zero-jedynkowej), gdzie najczęściej (w zależności od podejścia) 0 reprezentuje tło, 1 - interesujący obszar obrazu. \\
-Istnieje wiele metod binaryzacji, dlatego też można wybrać odpowiednią dla każdego algorytmu. Podstawowym problemem staje się jednak wyznaczenie odpowiedniego progu binaryzacji - ze względu na następującą w procesie radykalną redukcję informacji zawartych w obrazie, źle dobrany graniczny poziom jasności może doprowadzić do błędnej detekcji, w konsekwencji skutkującej złym działaniem programu. Dlatego też bardzo ważna jest znajomość rodzaju danych, z jakimi system przetwarzający będzie miał do czynienia - pozwoli to zastosować odpowiednią dla nich metodę obliczenia progu.
+Choć dla człowieka informacje zawarte na obrazie są proste w interpretacji, maszyna ''widzi'' ramkę jako zwykły ciąg liczb. Dlatego aby dokonywać automatycznej detekcji pewnych zjawisk i zależności, należy poddać ją odpowiednim przekształceniom, pozwalającym wyekstrahować interesujące powiązania. Zanim jednak to się stanie, należy między innymi dokonać uwydatnienia pożądanych cech na obrazie i pozbyć się zakłóceń, czyli poddać go filtracji. Taki proces nazywa się przetwarzaniem wstępnym, czyli \textit{preprocessingiem}. Do tej fazy wliczamy m.in.:
+\begin{itemize}
+\item przekształcenia geometryczne, wykorzystywane do korekcji błędów urządzeń akwizycyjnych
+\item przekształcenia punktowe, nie wymagające znajomości otoczenia piksela
+\item przekształcenia kontekstowe - na przykład filtry, ustalające wartość piksela na podstawie poziomu jasności pikseli z nim sąsiadujących
+\item przekształcenia widmowe, jak  np. transformata Fouriera
+\item przekształcenia morfologiczne, modyfikujące wartość piksela przy spełnieniu pewnego warunku logicznego
+\end{itemize}
+W zależności od tego, jakie elementy ramki są w programie istotne, stosuje się różne metody uwydatnienia informacji. W książce \cite{i1823330731}, z której pochodzi wspomniana wyżej klasyfikacja, opisane są najczęściej wykorzystywane algorytmy używane w takim procesie. W tej sekcji zostaną przedstawione niektóre z nich, istotne w kontekście niniejszej pracy.
+\subsection{Filtracja}
+Filtracja obrazu ma na celu wyeliminowanie niepożądanych cech obrazu. Jest to operacja kontekstowa, a więc wymagająca informacji o jasności piksela i jego otoczenia. Staje się przez to procesem wykorzystującym duże nakłady obliczeniowe maszyny, przez co znacznie opóźnia działanie metody wykorzystującej filtrację - dlatego też istotny jest dobór jak najbardziej optymalnego sposobu eliminacji zakłóceń w zależności od danych. Dostępnych jest wiele metod, jak choćby filtracja górno- lub dolnoprzepustowa czy filtracja medianowa. Dokonuje się także klasyfikacji filtrów na liniowe (w oparciu o kombinację wartości odpowiednich pikseli obrazu wejściowego) i nieliniowe (do przekształceń wykorzystujące nieliniową funkcję odpowiednich pikseli obrazu). 
+\subsubsection{Konwolucja}
+Operacją wykorzystywaną przy filtrach liniowych jest splot funkcji, czyli konwolucja. Ponieważ reprezentacja obrazów w przestrzeni cyfrowej jest dyskretna, również operacja splotu, w przestrzeni liczb rzeczywistych definiowana jako całka, może być opisana za pomocą zwykłego równania sumy:
+\begin{equation}
+\label{eq:konwolucja}
+L'(m,n) = (w x L)(m,n) = \sum_{i,j \in K} L(m-i, n-j)w(i,j)
+\end{equation}
+, gdzie L - obraz wejściowy, L' - efekt splotu obrazu z maską konwolucji, w - maska konwolucji, (m, n) - współrzędne piksela, dla którego wykonywana jest konwolucja jego otoczenia z maską w.\\
+Przykładowy splot fragmentu obrazu z maską filtru uśredniającego 3x3:
+%\begin{equation}
+\label{eq:konwolucjaPrzyklad}
+\[
+\begin{bmatrix}
+    10 & 30  & 4 \\
+    20 & \textcolor{red}{0}   & 5 \\
+    0  & \textcolor{red}{100} & 102 \\
+    20 & 50  & 20
+\end{bmatrix}
+\mathrm{x}
+\begin{bmatrix}
+    1 & 1 & 1 \\
+    1 & 1 & 1 \\
+    1 & 1 & 1
+\end{bmatrix}
+=
+\begin{bmatrix}
+    x &  x  & x \\
+    x & 271 & x \\
+    x & 317 & x \\
+    x &  x  & x 
+\end{bmatrix}
+\]
+%\end{equation}
+\subsubsection{Normalizacja}
+Ponieważ w konwolucji wykonywane są operacje mnożenia i dodawania, otrzymane wartości mogą znacznie wykraczać poza zakres, jaki należy uzyskać w danej przestrzeni - najczęściej powinna być to liczba z przedziału [0, 255]. Jak łatwo zauważyć, w przykładzie \ref{eq:konwolucjaPrzyklad} tak właśnie się stało. W celu dostosowania uzyskanych liczb do wymaganego zakresu dokonuje się normalizacji. Jeśli w masce obecne są wyłącznie elementy nieujemne, każdy wynik konwolucji dzielony jest przez sumę jej elementów. Jeśli jednak współczynniki w macierzy w są zarówno dodatnie, jak i ujemne, normalizacja musi odbywać się według następującego wzoru:
+\begin{equation}
+L''(m,n) = \dfrac{L'(m,n)-minL'(m,n)}{maxL'(m,n)-minL'(m,n)}
+\end{equation}
 \subsection{Przestrzenie barw}
-Przestrzeń barw to pewna matematyczna reprezentacja światła widzialnego w przestrzeni cyfrowej. W zależności od potrzeb stosowane są różne modele. Najpopularniejszymi są spotykane w urządzeniach elektronicznych trójkanałowe RGB (ang. \textit{Red Green Blue}) oraz komplementarny do niego, stosowany w druku CMYK (ang. \textit{Cyan Magenta Yellow blacK}), wykorzystujące właściwości ludzkiego wzroku determinujące sposób, w jaki człowiek odbiera barwy. Każdemu pikselowi obrazu są tu przypisane odpowiednie wartości na każdym kanale, na przykład czerwony piksel w reprezentacji RGB na kanale czerwonym (R) ma maksymalną wartość 255 (w 8-bitowej głębi kolorów), na niebieskim i zielonym po 0. Stosowane są one do łatwej do interpretacji przez człowieka reprezentacji cyfrowej kolorów na zdjęciach. Wprowadzają one jednak duże ograniczenia ze względu na ilość niesionej informacji. Akwizycja obrazu w innej przestrzeni pozwala na przykład na zastosowanie o wiele szerszego spektrum barw. Dlatego też często przy przetwarzaniu obrazów stosuje się inne modele, rozdzielające istotne dla maszyny informacje na oddzielne kanały, co umożliwia wydajniejsze i niekiedy dokładniejsze obliczenia na zdjęciach. \\
+Przestrzeń barw to pewna matematyczna reprezentacja światła widzialnego w przestrzeni cyfrowej. W zależności od potrzeb stosowane są różne modele. Najpopularniejszymi są spotykane w urządzeniach elektronicznych trójkanałowe RGB (ang. \textit{Red Green Blue}) oraz komplementarny do niego, stosowany w druku CMYK (ang. \textit{Cyan Magenta Yellow blacK}), wykorzystujące właściwości ludzkiego wzroku determinujące sposób, w jaki człowiek odbiera barwy. Każdemu pikselowi obrazu są tu przypisane odpowiednie wartości na każdym kanale, na przykład czerwony piksel w reprezentacji RGB na kanale czerwonym (R) ma maksymalną wartość 255 (w 8-bitowej głębi kolorów), na niebieskim i zielonym po 0. Stosowane są one do łatwej do interpretacji przez człowieka reprezentacji cyfrowej kolorów na zdjęciach. Wprowadzają one jednak duże ograniczenia ze względu na ilość niesionej informacji. Akwizycja obrazu w innej przestrzeni pozwala na przykład na zastosowanie o wiele szerszego spektrum barw. Dlatego też często przy przetwarzaniu obrazów stosuje się inne modele, rozdzielające istotne dla maszyny informacje na oddzielne kanały, co umożliwia wydajniejsze i niekiedy dokładniejsze obliczenia na zdjęciach.
+\paragraph{}
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=182px]{img/YCbCr}
+\caption{Reprezentacja płaszczyzny 
+CbCr dla stałej luminancji Y=0.5}
+%\floatfoot{Source: Wikipedia}
+\end{figure}
 W metodzie opisanej w rozdziale \ref{sec:BinWang}  używana jest przestrzeń YCbCr, oddzielająca kanał luminancji (Y), czyli poziomu jasności piksela, od kanałów chrominancji (Cb i Cr), przechowujących informację o jego odcieniu i nasyceniu. Taki sposób reprezentacji powstał z wykorzystaniem faktu, iż oko ludzkie jest o wiele bardziej czułe na poziom jasności obiektu, niż na jego kolor. Konwersja z przestrzeni RGB do YCbCr jest stosunkowo prosta - można ją zapisać w postaci macierzy:
+%\begin{equation}
 
 \[
 \begin{bmatrix}
@@ -25,26 +78,27 @@ W metodzie opisanej w rozdziale \ref{sec:BinWang}  używana jest przestrzeń YCb
 \end{bmatrix}
 \]
 
-Ponieważ wartości na kanałach RGB mieszczą się w przedziale 0-255, po przekształceniu do przestrzeni YCbCr otrzymujemy odpowiednio wartości od \[ 0-255\] na kanale Y oraz od \[-128-127 \] na kanałach Cb i Cr.
-\begin{figure}[!htb]
-\centering
-\includegraphics[width=82px]{img/YCbCr}
-\caption{Reprezentacja płaszczyzny 
-CbCr dla stałej luminancji Y=0.5}
-%\floatfoot{Source: Wikipedia}
-\end{figure}
-\section{Analiza obrazu} 
+%\end{equation}
+
+Ponieważ wartości na kanałach RGB mieszczą się w przedziale 0-255, po przekształceniu do przestrzeni YCbCr otrzymujemy odpowiednio wartości z przedziału [0, 255] na kanale Y oraz [-128, 127] na kanałach Cb i Cr.
+\section{Analiza obrazu}  
+\subsection{Binaryzacja}
+Jest to jedna z podstawowych metod punktowego przetwarzania obrazu.  Pozwala odseparować istotne informacje na zdjęciu z pominięciem zależności mniej interesujących, takich jak na przykład konkretny poziom jasności, utrudniających tylko dalsze przetwarzanie ze względu na większą złożoność obliczeń. Obraz zostaje sprowadzony do postaci binarnej (zero-jedynkowej), gdzie najczęściej (w zależności od podejścia) 0 reprezentuje tło, 1 - interesujący obszar obrazu.  
+\paragraph{}
+Istnieje wiele metod binaryzacji, dlatego też można wybrać odpowiednią dla każdego algorytmu. Podstawowym problemem staje się jednak wyznaczenie odpowiedniego progu binaryzacji - ze względu na następującą w procesie radykalną redukcję informacji zawartych w obrazie, źle dobrany graniczny poziom jasności może doprowadzić do błędnej detekcji, w konsekwencji skutkującej złym działaniem programu. Dlatego też bardzo ważna jest znajomość rodzaju danych, z jakimi system przetwarzający będzie miał do czynienia - pozwoli to zastosować odpowiednią dla nich metodę obliczenia progu.
 \subsection{Segmentacja obiektów}
-Po przekształceniach obrazu, uwydatniających zawarte w nim informacje, konieczne jest wyodrębnienie istotnych aspektów ramki. Służy do tego metoda zwana segmentacją obrazu, polegająca na podziale obrazu na segmenty odpowiadające konkretnym utrwalonym na nim elementom.
+Po dokonaniu binaryzacji otrzymujemy obraz czarno-biały, jednak wciąż konieczne jest przygotowanie uzyskanych wyników do dalszej analizy. Służy do tego metoda zwana segmentacją obrazu, polegająca na podziale obrazu na segmenty odpowiadające konkretnym utrwalonym na nim elementom.
 \section{Detekcja ruchu na scenie}
-Detekcja ruchu, czyli \textit{Motion Detection}, to sposób wykrywania przemieszczania się obiektów na scenie względem ich sąsiedztwa. Polega ona na analizie kolejnych ramek z sekwencji wideo i badaniu zmian następujących pomiędzy nimi.\\
-W wykrywaniu zmian pomagają algorytmy generacji tła.
+Detekcja ruchu, czyli \textit{Motion Detection}, to sposób wykrywania przemieszczania się obiektów na scenie względem ich sąsiedztwa. Polega ona na analizie kolejnych ramek z sekwencji wideo i badaniu zmian następujących pomiędzy nimi.
+\paragraph{}
+Ze względu na trudność problemu detekcji, opracowanych zostało wiele metod odseparowania obiektów poruszających się od statycznych elementów sceny. Jedną z nich, stosunkowo najprostszą, jest odjęcie od obrazu wejściowego modelu uzyskanego przy pomocy algorytmów generacji tła.
 \section{Standardowe metody generacji tła}
 \subsection{Średnia bieżąca}
 \cite{collins2003mean}
 \subsection{Gaussian Mixture Model}
 \label{sec:GMM}
 Metoda ta \cite{zivkovic2004improved} opiera się na obserwacji, iż obiekty tła, przy braku przemieszczających się obiektów na scenie, wykazują pewne zależności, które mogą zostać przedstawione za pomocą modeli statystycznych. Dlatego też wyodrębnienie pikseli nie pasujących do takiego modelu wiąże się z wykryciem ruchu na scenie. Jest to stosunkowo mało skomplikowany algorytm oparty na mechanizmie subtrakcji tła.
+
 \subsection{ViBE}
 \cite{barnich2011vibe}
 \subsection{PBAS}
@@ -53,6 +107,10 @@ Metoda ta \cite{zivkovic2004improved} opiera się na obserwacji, iż obiekty tł
 \section{Narzędzia}
 \subsection{Język C++}
 \subsection{Biblioteka OpenCV}
+
+OpenCV (ang. \textit{Open Source Computer Vision}) to dostępna od 2000 roku biblioteka, zawierająca implementacje najczęściej wykorzystywanych algorytmów wizyjnych. Jej główne zalety to dostępność na zasadach \textit{open source}, a także wieloplatformowość. Została ona napisana w języku C, jednak istnieją specjalne nakładki, pozwalające korzystać z niej także m. in. w C++, C\#, Python i języku Java. Udostępniony publicznie jest nie tylko kod źródłowy, ale także i narzędzia, pozwalające na samodzielną kompilację biblioteki, co pozwala na używanie jej w wielu środowiskach programistycznych.
+\paragraph{}
+Biblioteka ta zawiera ponad 2500 algorytmów zoptymalizowanych pod względem pamięciowym i obliczeniowym. Jest ciągle rozwijana, co pozwala domniemywać, iż zawarte w niej rozwiązania pozwalają maksymalnie wykorzystać możliwości sprzętowe obecnych urządzeń. Korzystanie z niej zdaje się więc być najbardziej odpowiednie dla problemu opisywanego w niniejszej pracy, jako że szybkość przetwarzania wideo jest kluczowa dla detekcji w czasie rzeczywistym.
 \begin{figure}[!htb]
 \centering
 
@@ -60,5 +118,5 @@ Metoda ta \cite{zivkovic2004improved} opiera się na obserwacji, iż obiekty tł
 \caption{Logo biblioteki OpenCV \cite{OpenCVLogo}}
 %\floatfoot{Source: }
 \end{figure}
-OpenCV (ang. \textit{Open Source Computer Vision}) to dostępna od 2000 roku biblioteka, zawierająca implementacje najczęściej wykorzystywanych algorytmów wizyjnych. Jej główne zalety to dostępność na zasadach \textit{open source}, a także wieloplatformowość.\\
-Została ona napisana w języku C, jednak istnieją specjalne nakładki, pozwalające korzystać z niej także m. in. w C++, C\#, Python i języku Java. Udostępniony publicznie jest nie tylko kod źródłowy, ale także i narzędzia, pozwalające na samodzielną kompilację biblioteki, co pozwala na używanie jej w wielu środowiskach programistycznych.
+
+Do rozwiązania problemu rozważanego w tej pracy użyta została biblioteka \textbf{OpenCV 2.4.9}, dostępna od 25.04.2014r.
