@@ -8,7 +8,7 @@ W rozdziale tym omówione zostaną wybrane dotychczasowo opracowane metody.
 \section{Flux Tensor with Split Gaussian Models}
 \label{sec:FTSG}
 
-Jednym z zaproponowanych rozwiązań omawianego w tej pracy problemu jest fuzja dwóch metod detekcji zmian na sekwencji wideo \cite{6910016}. Polega ona na wyliczeniu tensora przepływu (ang. \textit{Flux Tensor}) i modelowaniu tła za pomocą algorytmu bazującego na GMM opisanego w sekcji \ref{sec:GMM} ze zmienną liczbą modeli, dostosowującą się automatycznie przestrzennie i czasowo.
+Jednym z zaproponowanych rozwiązań omawianego w tej pracy problemu jest fuzja dwóch metod detekcji zmian na sekwencji wideo \cite{6910016}. Polega ona na wyliczeniu tensora przepływu (ang. \textit{Flux Tensor}) i modelowaniu tła za pomocą algorytmu bazującego na GMM opisanego w sekcji \ref{sec:GMM} z odseparowanymi modelami tła i pierwszego planu, dostosowującą się automatycznie przestrzennie i czasowo.
 Metoda ta dzieli się na trzy główne moduły:
 \begin{itemize}
 \item
@@ -17,11 +17,83 @@ detekcja zmian na poziomie piksela - obliczane są osobno modele dla ruchu (\tex
 fuzja otrzymanych wyników - stosując odpowiednie reguły łączone są modele FT i SG, aby zredukować ilość fałszywych detekcji
 \item
 klasyfikacja obiektów - obsługa przypadków obiektów zatrzymanych bądź usuniętych ze sceny
-\subsection{Flux Tensor}
-Tensor przepływu pozwala na wykrycie ruchu pomiędzy kolejnymi ramkami nagrania. 
 \end{itemize}
-\section{Weightless Neutral Networks}
-Praca \cite{6910014}
+\subsection{Flux Tensor}
+\label{sec:FT}
+Tensor przepływu pozwala na wykrycie zmian przemieszczenia obiektów sceny pomiędzy kolejnymi ramkami nagrania. Może on być definiowany jako wariacja czasowa przepływu optycznego w lokalnej przestrzeni 3D. Wykorzystanie tej metody umożliwia pominięcie kosztownego rozkładu macierzy na wartości i wektory własne przy uzyskiwaniu informacji o ruchu na scenie.\\
+Najbardziej istotne dla tej metody są następujące cechy:
+\begin{itemize}
+\item niewrażliwość na cienie
+\item nikła czułość na zmiany oświetlenia na scenie.
+\end{itemize} 
+W postaci macierzy równanie tensora przedstawia się następująco:
+\begin{equation}
+\label{eq:FT}
+J_{F} =
+\begin{bmatrix}
+%
+\int_\Omega \left\{\frac{\partial^2I}{\partial x\partial t}\right\}^2 \mathrm{d}y   &
+%
+\int_\Omega \frac{\partial^2I}{\partial x\partial t} \frac{\partial^2I}{\partial y\partial t} \mathrm{d}y  &
+%
+\int_\Omega \frac{\partial^2I}{\partial x\partial t} \frac{\partial^2I}{\partial t^2} \mathrm{d}y
+\\
+%
+%
+\int_\Omega \frac{\partial^2I}{\partial y\partial t} \frac{\partial^2I}{\partial x\partial t} \mathrm{d}y  &
+%
+\int_\Omega \left\{\frac{\partial^2I}{\partial y\partial t}\right\}^2 \mathrm{d}y   &
+%
+\int_\Omega \frac{\partial^2I}{\partial y\partial t} \frac{\partial^2I}{\partial t^2} \mathrm{d}y
+\\
+%
+%
+\int_\Omega \frac{\partial^2I}{\partial t^2} \frac{\partial^2I}{\partial x\partial t} \mathrm{d}y   &
+%
+\int_\Omega \frac{\partial^2I}{\partial t^2} \frac{\partial^2I}{\partial y\partial t} \mathrm{d}y   &
+%
+\int_\Omega \left\{\frac{\partial^2I}{\partial t^2}\right\}^2 \mathrm{d}y
+\end{bmatrix}
+\end{equation}
+Uzyskane w ten sposób elementy macierzy tensora zawierają informacje na temat czasowych zmian gradientu (pola wektorowego, wskazującego kierunki najszybszych wzrostów wartości pola skalarnego, w tym wypadku - obrazu) na scenie. Pozwala to na prostą klasyfikację obiektów jako poruszające się bądź statyczne.\\
+Z tego też powodu ślad tensora przepływu, zapisany jako:
+\begin{equation}
+tr(J_{F}) = 
+\int_\Omega ||\frac{\partial}{\partial t}\nabla I||^2\mathrm{d}y
+\end{equation}
+może zostać bezpośrednio wykorzystany do klasyfikacji pikseli jako należących do obiektu poruszającego się bądź statycznego z pominięciem kosztownej dekompozycji macierzy.
+\subsection{Split Gaussian Models}
+\label{sec:SG}
+Metoda ta jest na modelach probabilistycznych wyznaczanych dla każdego z pikseli. Różnica w podejściu prezentowanym w tym artykule polega na tym, iż modele powstają osobno dla tła i obiektów pierwszoplanowych.
+\subsection{Fuzja wyników}
+\label{sec:fuzja}
+Wyniki otrzymywane za pomocą metod \ref{sec:FT} i \ref{sec:SG} uzyskiwane są niezależnie od siebie. W skutek działania algorytmów tworzone są więc dwa modele - jeden, za pomocą tensora przepływu, reprezentujący wyłącznie ruch na scenie, drugi, dzięki SG, pozwalający na wykrycie także obiektów statycznych. Ponieważ jednak FT ma tendencję do tworzenia większych masek obiektów, niż powinny być w rzeczywistości, a metoda SG jest wrażliwa na zmiany oświetlenia i zakłócenia/szumy na scenie, aby uzyskać jak najlepsze rezultaty detekcji, eliminując błędne klasyfikacje pikseli dla każdej z metod, należy połączyć oba te rozwiązania.  Fuzji nie można dokonać jednak na przykład poprzez proste dodanie obu wyników. Zaproponowany został następujący model klasyfikacji:
+\begin{algorithm}[H]
+ \KwData{model tła BG, maska $F_{F}$, maska $F_{B}$}
+ \KwResult{klasyfikacja pikseli jako elementy tła lub pierwszego planu}
+ \For{$ x,y \in K$}{
+  \uIf {$F_{F}(x,y)$ {\bf and} $F_{B}(x,y)$}{
+	I(x,y) należy do ruchomego obiektu pierwszoplanowego}
+  \uElseIf{$Ff(x,y)$ {\bf and} $!Fb(x,y)$}{
+	I(x,y) należy do efektu halo wokół obiektu}
+  \uElseIf{$I(x,y)$ pasuje do modelu pierwszego planu}{
+	I(x,y) należy do statycznego obiektu pierwszego planu}
+  \uElse{
+	I(x,y) to zmiana oświetlenia}
+  }
+ \caption{Pseudokod mechanizmu fuzji rozwiązań}
+\end{algorithm}
+\subsection{Wykrywanie obiektów zatrzymanych i usuniętych ze sceny}
+Elementem wprowadzającym błędną detekcję jest też problem rozróżnienia obiektów zatrzymanych i usuniętych ze sceny. Choć są to dwa różne przypadki, z punktu widzenia maszyny wyglądają one bardzo podobnie - obszar brany tutaj pod uwagę nie porusza się. W wyniku fuzji opisanej w podrozdziale \ref{sec:fuzja} zarówno piksel obiektu statycznego, jak i odsłoniętego tła, zostają zakwalifikowane jako należące do statycznego pierwszego planu.\\
+Zaproponowano odpowiedni mechanizm radzenia sobie z tym problemem, polegający na detekcji brzegów obszaru zainteresowania w aktualnej ramce, modelu tła uzyskanego poprzez subtrakcję tła oraz maski obiektów pierwszoplanowych. Porównanie tak wykrytych brzegów pozwala zaklasyfikować rozważany obszar bądź do tła - przy większym podobieństwie brzegu z aktualnej ramki do brzegu uzyskanego z modelu tła - bądź pierwszego planu w przeciwnym wypadku. 
+\section{CwisarDH}
+Praca \cite{6910014} opisuje metodę opierającą się na tzw. \textit{pattern matching}, czyli dopasowywaniu do wzorca. Rozwiązanie to wykorzystuje mechanizm sieci neuronowych z pominięciem parametrów wagowych. Głównymi cechami tej metody są:
+\begin{itemize}
+\item realizowanie obliczeń na podstawie wartości piksela bez konieczności uzyskiwania informacji na temat jego sąsiedztwa
+\item prostota przetwarzania materiału wideo
+\item użycie mechanizmu sieci neuronowych bez jego modyfikacji
+\end{itemize}
+Mechanizm wykorzystywanych tu sieci neuronowych oparty jest na węzłach pamięci RAM. Są one zdolne rozpoznać \textit{n}-bitowe wartości (w postaci binarnych krotek), pochodzące z czarno-białego obrazu wejściowego. Wiąże to wartości wejściowe węzła z obrazem relacją jeden-do-jednego za pomocą mapowania pseudolosowego.
 \section{Self-tuning Background Subtraction Algorithm}
 \label{sec:BinWang}
 Choć w ostatnich latach możliwości obliczeniowe maszyn, zarówno pod względem ilości przetwarzanych danych, jak i prędkości, rozwijały się bardzo dynamicznie, obecni inżynierowie borykają się z problemami nie do przezwyciężenia. Częstotliwość taktowania procesorów o dotychczas stosowanej architekturze nie może być już bardziej zwiększana - spowodowane jest to fizycznymi ograniczeniami sprzętu. Sekwencyjne wykonywanie poleceń uzależnia więc czas działania algorytmu od prędkości obliczeniowej jednostki wykonującej operacje. Dla problemu opisywanego w tej pracy szybkość przetwarzania jest szczególnie ważna - standardowy format wideo to 25 klatek na sekundę. Oznacza to, iż w celu detekcji w czasie rzeczywistym, jedna ramka o określonej rozdzielczości musi zostać przetworzona w czasie 1/25 sekundy. Dlatego też autorzy rozwiązania opisanego w artykule \cite{6910012} postanowili zmierzyć się z tym problemem, opracowując metodę, która wykonuje potrzebne obliczenia dla każdego piksela niezależnie, dokonując klasyfikacji jedynie na podstawie historii jego jasności. Takie podejście umożliwia implementację w architekturze równoległej, jak choćby z wykorzystaniem mocy obliczeniowej GPU (ang. \textit{Graphics processing unit} - procesor graficzny) czy układów FPGA (ang. \textit{Field-programmable gate array}).
