@@ -94,10 +94,31 @@ Detekcja ruchu, czyli \textit{Motion Detection}, to sposób wykrywania przemiesz
 Ze względu na trudność problemu detekcji, opracowanych zostało wiele metod odseparowania obiektów poruszających się od statycznych elementów sceny. Jedną z nich, stosunkowo najprostszą, jest odjęcie od obrazu wejściowego modelu uzyskanego przy pomocy algorytmów generacji tła.
 \section{Standardowe metody generacji tła}
 \subsection{Średnia bieżąca}
-\cite{collins2003mean}
+Algorytm średniej bieżącej to bezparametrowa metoda detekcji ruchu oparta na zależnościach statystycznych. Polega ona na analizie rozkładu prawdopodobieństwa wystąpienia pewnych wartości jasności (koloru) piksela na podstawie jego sąsiedztwa.\\
+\nocite{kheng2011mean}
+Średnia bieżąca (ang. \textit{mean shift}) wyznaczana jest metodą iteracyjną dla każdej próbki obrazu oddzielnie. Dla danego piksela x oblicza się średnią tymczasową m(x) z jego otoczenia, która przedstawia się wzorem:
+\begin{equation}
+m(x) = 
+\frac{\sum_{i=1}^{n}K(x-x_{i})x_{i}}{\sum_{i=1}^{n}K(x-x_{i})}
+\end{equation}
+, gdzie K - kernel, w którym zawarte są wagi, z jakimi brane są pod uwagę piksele sąsiedztwa x\textsubscript{i}, n - ilość pikseli sąsiedztwa \\
+Średnią bieżącą nazywamy różnicę m(x) - x.
+Następnie należy sprawdzić, czy wartość piksela równa jest średniej tymczasowej, czyli czy m(x) == x. Jeśli nie - należy przypisać x = m(x) i rozpocząć wyznaczanie średniej dla nowej wartości x. Jeśli jednak tak, algorytm kończy się.\\
+Jeśli średnie tymczasowe obliczane są dla wielu punktów, aktualizacja ich wartości odbywa się równocześnie w każdej iteracji.
+\paragraph{}
+W ten sposób otrzymana średnia bieżąca może zostać użyta do wykrywania ruchu na scenie. Tworzona jest mapa gęstości prawdopodobieństwa na podstawie histogramu kolorów obiektu w poprzedniej ramce (dla każdego piksela osobno), a następnie wyszukuje się w niej szczytowej wartości w pobliżu wcześniejszego położenia obiektu. Pozwala to na wykrycie kierunku ruchu obiektu zmieniającego położenie.
+\paragraph{}
+Najczęściej wspominaną wadą takiego podejścia jest konieczność używania stałej wielkości ramki, w której ma znajdować się śledzony obiekt. Niewygodne staje się więc śledzenie obiektów zmieniających rozmiar w czasie, jak np. nadjeżdżających samochodów obserwowanych z odpowiedniej perspektywy. Bardziej elastyczną wersją tej metody jest CAMSHIFT (ang. \textit{Continuous Adaptive Mean Shift}, potrafiąca dostosować się do zmian w kolorystyce obiektu, a także jego rozmiarze. Implementacja obu algorytmów dostępna jest w bibliotece OpenCV.\\ \\ \\
+\begin{LARGE}
+\textcolor{red}{WYNIKI DLA DYNAMIC BG}
+\end{LARGE}
+
 \subsection{Gaussian Mixture Model}
 \label{sec:GMM}
 Metoda ta \cite{zivkovic2004improved} opiera się na obserwacji, iż obiekty tła, przy braku przemieszczających się obiektów na scenie, wykazują pewne zależności, które mogą zostać przedstawione za pomocą modeli statystycznych. Dlatego też wyodrębnienie pikseli nie pasujących do takiego modelu wiąże się z wykryciem ruchu na scenie. Jest to stosunkowo mało skomplikowany algorytm oparty na mechanizmie subtrakcji tła.
+\paragraph{}
+Pierwszym etapem działania algorytmu jest wyznaczenie modelu tła. Odbywa się to na podstawie gaussowskiego rozkładu prawdopodobieństwa dla każdego piksela sceny. Estymowane wartości modelu tła otrzymywane są w wyniku analizy określonej liczby próbek w czasie t. Następnie odbywa się klasyfikacja pikseli. Jeżeli prawdopodobieństwo wystąpienia danego piksela w ramce t+n jest większe od pewnego ustalonego progu, zostaje on sklasyfikowany jako tło. W przeciwnym wypadku przypisuje się go do modelu pierwszoplanowego.\\
+Głównym problemem, z jakim spotyka się ta metoda, jest problem z adaptacją do zmian na scenie, na przykład w oświetleniu. 
 
 \subsection{ViBE}
 \cite{barnich2011vibe}
