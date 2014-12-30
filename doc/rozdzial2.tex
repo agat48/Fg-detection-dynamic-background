@@ -91,7 +91,13 @@ Po dokonaniu binaryzacji otrzymujemy obraz czarno-biały, jednak wciąż koniecz
 \section{Detekcja ruchu na scenie}
 Detekcja ruchu, czyli \textit{Motion Detection}, to sposób wykrywania przemieszczania się obiektów na scenie względem ich sąsiedztwa. Polega ona na analizie kolejnych ramek z sekwencji wideo i badaniu zmian następujących pomiędzy nimi.
 \paragraph{}
-Ze względu na trudność problemu detekcji, opracowanych zostało wiele metod odseparowania obiektów poruszających się od statycznych elementów sceny. Jedną z nich, stosunkowo najprostszą, jest odjęcie od obrazu wejściowego modelu uzyskanego przy pomocy algorytmów generacji tła.
+Ze względu na trudność problemu detekcji, opracowanych zostało wiele metod odseparowania obiektów poruszających się od statycznych elementów sceny. Jedną z nich, stosunkowo najprostszą, jest odjęcie od obrazu wejściowego modelu uzyskanego przy pomocy algorytmów generacji tła. Na tym etapie twórcy metod muszą rozważyć jednak trzy podstawowe kwestie:
+\begin{itemize}
+\item czym jest model i jak się zachowuje?
+\item jak dokonać inicjalizacji modelu tła?
+\item w jaki sposób aktualizować model w czasie?
+\end{itemize}
+Związane jest to z faktem, iż bardzo rzadko na sekwencjach wideo rejestrowane są sytuacje idealne - często scenie towarzyszą zmiana oświetlenia (zwłaszcza w długotrwałym monitoringu na zewnątrz) lub szumy/zakłócenia, czego rezultatem jest, iż pomimo braku ruchu obiektów poszczególne piksele zmieniają swoją wartość - co przy standardowym podejściu polegającym na porównaniu wartości pikseli odpowiadających sobie pomiędzy ramkami skutkuje fałszywą detekcją. Rzadko również do dyspozycji są sekwencje z "czystym" obrazem tła - na próbkowanych ramkach znajdują obiekty już w ruchu, albo statyczne, jednak mogące w każdej chwili zmienić swoje położenie - jak choćby zaparkowane samochody. Zasłaniają one tło, przez do wygenerowanie prawidłowego modelu staje się bardzo trudne, a niekiedy niemożliwe. Opisane w dalszej części rozwiązania stworzone zostały z uwzględnieniem niniejszych ograniczeń.
 \section{Standardowe metody generacji tła}
 \subsection{Średnia bieżąca}
 Algorytm średniej bieżącej to bezparametrowa metoda detekcji ruchu oparta na zależnościach statystycznych. Polega ona na analizie rozkładu prawdopodobieństwa wystąpienia pewnych wartości jasności (koloru) piksela na podstawie jego sąsiedztwa.\\
@@ -118,10 +124,24 @@ Najczęściej wspominaną wadą takiego podejścia jest konieczność używania 
 Metoda ta \cite{zivkovic2004improved} opiera się na obserwacji, iż obiekty tła, przy braku przemieszczających się obiektów na scenie, wykazują pewne zależności, które mogą zostać przedstawione za pomocą modeli statystycznych. Dlatego też wyodrębnienie pikseli nie pasujących do takiego modelu wiąże się z wykryciem ruchu na scenie. Jest to stosunkowo mało skomplikowany algorytm oparty na mechanizmie subtrakcji tła.
 \paragraph{}
 Pierwszym etapem działania algorytmu jest wyznaczenie modelu tła. Odbywa się to na podstawie gaussowskiego rozkładu prawdopodobieństwa dla każdego piksela sceny. Estymowane wartości modelu tła otrzymywane są w wyniku analizy określonej liczby próbek w czasie t. Następnie odbywa się klasyfikacja pikseli. Jeżeli prawdopodobieństwo wystąpienia danego piksela w ramce t+n jest większe od pewnego ustalonego progu, zostaje on sklasyfikowany jako tło. W przeciwnym wypadku przypisuje się go do modelu pierwszoplanowego.\\
-Głównym problemem, z jakim spotyka się ta metoda, jest problem z adaptacją do zmian na scenie, na przykład w oświetleniu. 
+Głównym problemem, z jakim spotyka się ta metoda, jest problem z adaptacją do zmian na scenie, na przykład w oświetleniu.\\
+Prawdopodobieństwo wystąpienia danej wartości piksela x w ramce t przy K jako liczbie gausjanów używanych w modelu dane jest następującym wzorem:
+\begin{equation}
+P(x_{t}) = \sum_{i=1}^{K} waga_{i,t}*g(x_{t},\mu_{i,t},\sigma_{i,t})
+\end{equation}
+, gdzie g(a,b,c) - funkcja gęstości prawdopodobieństwa dla rozkładu Gaussa, $\mu$ - wartość średnia, $\sigma$ - odchylenie standardowe.\\
+Głównym zagadnieniem dla tej metody jest kwestia doboru próbek, na podstawie których wyznaczane jest prawdopodobieństwo. Zbyt mała bądź źle dobrana ich ilość powoduje fałszywą detekcję w przypadku znacznej zmienności tła, zbyt duża - zawyżoną tolerancję, przez co piksele pierwszoplanowe zostają niekiedy sklasyfikowane jako tło.
 
 \subsection{ViBE}
-\cite{barnich2011vibe}
+Autorzy pracy \cite{barnich2011vibe} zaproponowali jeszcze inny sposób na dokonywanie detekcji w zmieniających się warunkach otoczenia. Zamiast modelować i przewidywać wartość piksela, postanowili oni przechowywać informację o jego wcześniejszych reprezentacjach.
+\paragraph{}
+ViBE (ang. \textit{VIsual Background Extractor}) porzuca koncepcję estymacji pożądanej wartości piksela na podstawie wielu globalnych próbek, mogących zawierać wartości skrajnie odbiegające od średnich wartości. Zamiast tego skupia się na badaniu podobieństwa aktualnego piksela do wartości zarejestrowanych uprzednio - przechowywanie informacji o jego historii pozwala lepiej radzić sobie w warunkach drobnego ruchu na scenie.
+\subsubsection{Opis metody}
+Niech piksel $x$, którego wartość w przestrzeni barwnej oznaczona jest jako $v(x)$, reprezentowany jest w czasie jako zbiór poprzednich wartości $v_{i}$:
+\begin{equation}
+M(x) = \left\{v_{1}, v_{2}, ..., v_{n}\right\}
+\end{equation}
+Klasyfikacja $x$ odbywa się poprzez zbadanie odległości $v(x)$ od każdego elementu ze zbioru $M(x)$. Jeśli jest ona mniejsza od pewnego ustalonego progu ($v(x)$ i $v_{k}$ są odpowiednio bliskie), następuje zwiększenie licznika odpowiadającego pewnemu stopniowi podobieństwa badanego piksela do swojej historii. Po przekroczeniu pewnego progu podobieństwa piksel klasyfikowany jest jako tło, dalsze sprawdzanie odległości można pominąć.
 \subsection{PBAS}
 \cite{hofmann2012background}
 \section{Standardowe metody a dynamiczne tło}
