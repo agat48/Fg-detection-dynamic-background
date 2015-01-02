@@ -89,6 +89,8 @@ Jest to jedna z podstawowych metod punktowego przetwarzania obrazu.  Pozwala ods
 Istnieje wiele metod binaryzacji, dlatego też można wybrać odpowiednią dla każdego algorytmu. Podstawowym problemem staje się jednak wyznaczenie odpowiedniego progu binaryzacji - ze względu na następującą w procesie radykalną redukcję informacji zawartych w obrazie, źle dobrany graniczny poziom jasności może doprowadzić do błędnej detekcji, w konsekwencji skutkującej złym działaniem programu. Dlatego też bardzo ważna jest znajomość rodzaju danych, z jakimi system przetwarzający będzie miał do czynienia - pozwoli to zastosować odpowiednią dla nich metodę obliczenia progu.
 \subsection{Segmentacja obiektów}
 Po dokonaniu binaryzacji otrzymujemy obraz czarno-biały, jednak wciąż konieczne jest przygotowanie uzyskanych wyników do dalszej analizy. Służy do tego metoda zwana segmentacją obrazu, polegająca na podziale obrazu na segmenty odpowiadające konkretnym utrwalonym na nim elementom.
+\paragraph{}
+Segmentacja obiektów pierwszoplanowych staje się szczególnie trudnym zagadnieniem w przypadku detekcji ruchu na scenie. O ile uzyskanie informacji o obiekcie przemieszczającym się przeważnie nie jest skomplikowane, utrzymanie modelu pierwszego planu dla elementów zatrzymanych nastręcza już sporych trudności. Spowodowane jest to koniecznością dostosowywania modelu tła do panujących warunków, przez co statyczne obiekty mogą ulegać błędnej inkorporacji do tego modelu.
 \section{Detekcja ruchu na scenie}
 Detekcja ruchu, czyli \textit{Motion Detection}, to sposób wykrywania przemieszczania się obiektów na scenie względem ich sąsiedztwa. Polega ona na analizie kolejnych ramek z sekwencji wideo i badaniu zmian następujących pomiędzy nimi.
 \paragraph{}
@@ -149,12 +151,20 @@ Metoda ta \cite{zivkovic2004improved} opiera się na obserwacji, iż obiekty tł
 \paragraph{}
 Pierwszym etapem działania algorytmu jest wyznaczenie modelu tła. Odbywa się to na podstawie gaussowskiego rozkładu prawdopodobieństwa dla każdego piksela sceny. Estymowane wartości modelu tła otrzymywane są w wyniku analizy określonej liczby próbek w czasie t. Następnie odbywa się klasyfikacja pikseli. Jeżeli prawdopodobieństwo wystąpienia danego piksela w ramce t+n jest większe od pewnego ustalonego progu, zostaje on sklasyfikowany jako tło. W przeciwnym wypadku przypisuje się go do modelu pierwszoplanowego.\\
 Głównym problemem, z jakim spotyka się ta metoda, jest problem z adaptacją do zmian na scenie, na przykład w oświetleniu.\\
-Prawdopodobieństwo wystąpienia danej wartości piksela x w ramce t przy K jako liczbie gausjanów używanych w modelu dane jest następującym wzorem:
+Prawdopodobieństwo wystąpienia danej wartości piksela x (z uwzględnieniem jasności na wszystkich kanałach) w ramce t przy K jako liczbie gausjanów używanych w modelu dane jest następującym wzorem:
 \begin{equation}
-P(x_{t}) = \sum_{i=1}^{K} waga_{i,t}*g(x_{t},\mu_{i,t},\sigma_{i,t})
+P(x_{t}) = \sum_{i=1}^{K} waga_{i,t}*g(x_{t},\mu_{i,t},\Sigma_{i,t})
 \end{equation}
-, gdzie g(a,b,c) - funkcja gęstości prawdopodobieństwa dla rozkładu Gaussa, $\mu$ - wartość średnia, $\sigma$ - odchylenie standardowe.\\
-Głównym zagadnieniem dla tej metody jest kwestia doboru próbek, na podstawie których wyznaczane jest prawdopodobieństwo. Zbyt mała bądź źle dobrana ich ilość powoduje fałszywą detekcję w przypadku znacznej zmienności tła, zbyt duża - zawyżoną tolerancję, przez co piksele pierwszoplanowe zostają niekiedy sklasyfikowane jako tło.
+, przy czym funkcja gęstości prawdopodobieństwa dla rozkładu Gaussa:
+\begin{equation}
+g(x,\mu,\Sigma) = \frac{1}{\sqrt{|\Sigma|}\sqrt{2\pi}}\mathrm{e}^\frac{-(x-\mu)^T\Sigma^(-1)(x-\mu)}{2}
+\end{equation}
+, gdzie $\mu$ - wartość średnia, $\Sigma$ - macierz kowariancji, dla uproszczenia traktowana jako kwadrat odchylenia standardowego:
+\begin{equation}
+\Sigma_{k,t}=\sigma_{k}^2I
+\end{equation}
+Takie podejście umożliwia stworzenie multomodalnej reprezentacji tła, co jest szczególnie ważne dla segmentacji w obecności drobnego ruchu na scenie - piksele ruchomych fragmentów tła mogą przyjmować wtedy skrajne wartości w czasie, reprezentowanie ich więc w modelu referencyjnym poprzez pojedyncze liczby często prowadzi do poważnych błędów w działaniu algorytmu. \\ 
+Głównym zagadnieniem dla tej metody jest kwestia doboru próbek, na podstawie których wyznaczane jest prawdopodobieństwo. Zbyt mała bądź źle dobrana ich ilość powoduje fałszywą detekcję w przypadku znacznej zmienności tła, zbyt duża - zawyżoną tolerancję, przez co piksele pierwszoplanowe zostają niekiedy sklasyfikowane jako tło. Próg tolerancji również musi się różnić w zależności od poziomu jasności pikseli, ponieważ w zacienionych obszarach z reguły dużo rzadziej występuje zaszumienie.
 
 \subsection{ViBE}
 Autorzy pracy \cite{barnich2011vibe} zaproponowali jeszcze inny sposób na dokonywanie detekcji w zmieniających się warunkach otoczenia. Zamiast modelować i przewidywać wartość piksela, postanowili oni przechowywać informację o jego wcześniejszych reprezentacjach.
