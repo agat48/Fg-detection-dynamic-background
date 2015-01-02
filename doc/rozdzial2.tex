@@ -51,6 +51,7 @@ Ponieważ w konwolucji wykonywane są operacje mnożenia i dodawania, otrzymane 
 L''(m,n) = \dfrac{L'(m,n)-minL'(m,n)}{maxL'(m,n)-minL'(m,n)}
 \end{equation}
 \subsection{Przestrzenie barw}
+\label{sec:colorSpace}
 Przestrzeń barw to pewna matematyczna reprezentacja światła widzialnego w przestrzeni cyfrowej. W zależności od potrzeb stosowane są różne modele. Najpopularniejszymi są spotykane w urządzeniach elektronicznych trójkanałowe RGB (ang. \textit{Red Green Blue}) oraz komplementarny do niego, stosowany w druku CMYK (ang. \textit{Cyan Magenta Yellow blacK}), wykorzystujące właściwości ludzkiego wzroku determinujące sposób, w jaki człowiek odbiera barwy. Każdemu pikselowi obrazu są tu przypisane odpowiednie wartości na każdym kanale, na przykład czerwony piksel w reprezentacji RGB na kanale czerwonym (R) ma maksymalną wartość 255 (w 8-bitowej głębi kolorów), na niebieskim i zielonym po 0. Stosowane są one do łatwej do interpretacji przez człowieka reprezentacji cyfrowej kolorów na zdjęciach. Wprowadzają one jednak duże ograniczenia ze względu na ilość niesionej informacji. Akwizycja obrazu w innej przestrzeni pozwala na przykład na zastosowanie o wiele szerszego spektrum barw. Dlatego też często przy przetwarzaniu obrazów stosuje się inne modele, rozdzielające istotne dla maszyny informacje na oddzielne kanały, co umożliwia wydajniejsze i niekiedy dokładniejsze obliczenia na zdjęciach.
 \paragraph{}
 \begin{figure}[!htb]
@@ -98,7 +99,30 @@ Ze względu na trudność problemu detekcji, opracowanych zostało wiele metod o
 \item w jaki sposób aktualizować model w czasie?
 \end{itemize}
 Związane jest to z faktem, iż bardzo rzadko na sekwencjach wideo rejestrowane są sytuacje idealne - często scenie towarzyszą zmiana oświetlenia (zwłaszcza w długotrwałym monitoringu na zewnątrz) lub szumy/zakłócenia, czego rezultatem jest, iż pomimo braku ruchu obiektów poszczególne piksele zmieniają swoją wartość - co przy standardowym podejściu polegającym na porównaniu wartości pikseli odpowiadających sobie pomiędzy ramkami skutkuje fałszywą detekcją. Rzadko również do dyspozycji są sekwencje z "czystym" obrazem tła - na próbkowanych ramkach znajdują obiekty już w ruchu, albo statyczne, jednak mogące w każdej chwili zmienić swoje położenie - jak choćby zaparkowane samochody. Zasłaniają one tło, przez do wygenerowanie prawidłowego modelu staje się bardzo trudne, a niekiedy niemożliwe. Opisane w dalszej części rozwiązania stworzone zostały z uwzględnieniem niniejszych ograniczeń.
-\section{Standardowe metody generacji tła}
+\subsection{Modelowanie tła}
+Jednym z najczęściej używanych w detekcji ruchu na scenie rozwiązań pośrednich jest modelowanie tła. Polega ono na stworzeniu modelu referencyjnego sceny bez żadnych ruchomych obiektów, co pozwala na późniejsze porównanie z nim kolejnych ramek nagrania w celu wykrycia zmian. Najczęściej odbywa się to poprzez algorytmy subtrakcji tła - obliczana jest absolutna różnica pomiędzy modelem tła a aktualnie analizowanym obrazem sceny, co skutkuje otrzymaniem obrazu, na którym niezerowe wartości są interpretowane jako obiekty pierwszoplanowe.
+\paragraph{}
+W rzeczywistości jednak to zagadnienie okazuje się być o wiele bardziej skomplikowane. W nagraniach rejestrowanych przez kamery w monitoringu wizyjnym rzadko dostępny jest materiał, na którym widoczne jest samo tło. Usuwanie wszelkich obiektów ze sceny i trenowanie maszyn monitorujących za każdym razem, kiedy tło zmieni się - na przykład zostanie wybudowany nowy budynek bądź nastąpi przemeblowanie wewnątrz pomieszczenia - jest bardzo uciążliwe. Twórcy oprogramowania zajmującego się automatyczną detekcją obiektów borykają się także z problemami, jakich nastręcza zjawisko ruchu obrotowego Ziemi - zmiennym oświetleniem sceny w zależności od pory dnia. Trzeba bowiem brać pod uwagę, iż na obrazie reprezentowana jest jasność poszczególnych pikseli - im mniej światła, tym ciemniejsze stają się obiekty. Można pomyśleć, iż ta kwestia rozwiązana zostać może poprzez zmianę przestrzeni kolorów i odseparowanie luminancji pikseli od ich barwy (\ref{sec:colorSpace}), jednak i tu pojawiają się problemy - mniej światła oznacza dużo mniej dokładną akwizycję barwy piksela, a co za tym idzie mogą pojawiać się różnice odcieni w czasie. Występuje tu analogia do procesu widzenia człowieka - oko ludzkie potrafi rozpoznawać kształt i ruch nawet przy bardzo słabym oświetleniu, odbywa się to jednak kosztem postrzegania w kolorze. W półmroku człowiek rejestruje więc otoczenie w skali szarości.
+\paragraph{}
+Z tych i wielu innych powodów zagadnienie modelowania tła staje się kluczowym w przypadku wielu algorytmów. Dobry obiekt referencyjny pozwala bowiem na ograniczenie detekcji do zwykłego porównywania wartości poszczególnych pikseli. Najczęściej proces modelowania odbywa się na podstawie początkowej sekwencji testowej, a następnie wzorzec tła jest uaktualniany poprzez odpowiednie modyfikacje przez cały czas działania programu wykrywającego ruch. Stosowanych jest wiele podejść, wykorzystujących zarówno proste mechanizmy, jak średnia wartość piksela na obrazie, jak i nieco bardziej zaawansowane, oparte na statystyce i probabilistyce. Warto wspomnieć tu o modelach gaussowskich, pojawiających się w większości proponowanych obecnie rozwiązań. Zasada ich działania opisana zostanie w dalszej części pracy.
+\paragraph{}
+Standardowe podejścia w dziedzinie generacji tła, jak średnia jasność bądź model Gaussa na podstawie pojedynczej ramki, nie dają jednak spodziewanych rezultatów w przypadkach obecności drobnego ruchu na scenie. Obiekty tła pozostające w ciągłym \textcolor{red}{ruchu} mogą bowiem przyjmować diametralnie skrajne wartości jasności. Posiadanie więc jednego modelu tła okazuje się nie być wystarczające. Te same algorytmy dla różnych zestawów nagrań wykazują się odmienną skutecznością, co jest zjawiskiem niepożądanym - dobry system detekcji powinien pracować prawidłowo niezależnie od panujących warunków.
+\begin{figure}[!htb]
+\centering
+
+\includegraphics[width=0.4\textwidth]{img/sample}
+\includegraphics[width=0.4\textwidth]{img/sample}
+\caption{Modelowanie tła. Po lewej - ramka z nagrania, po prawej wyidealizowany model tła}
+%\floatfoot{Source: }
+\end{figure}
+\subsection{Metody uaktualniania modelu tła}
+Aby utrzymać prawidłową pracę systemu detekcji w zmiennych warunkach, należy dokonywać uaktualniania modelu tła na bieżąco. Polega to na podmianie wartości niektórych pikseli modelu bardziej \textcolor{red}{aktualnymi}. Ze względu na politykę stosowaną w tym procesie wyróżniane są dwie metody:
+\begin{itemize}
+\item konserwatywna
+\item ślepa
+\end{itemize} 
+Metoda \textbf{konserwatywna} (ang. \textit{conservative update}) polega na uaktualnianiu wartości tylko dla tych pikseli, które zaklasyfikowane zostały obecnie jako tło. Choć z pozoru najbardziej intuicyjna, może doprowadzić do poważnych problemów na przykład przy błędnej detekcji elementów tła - jeśli nieprawidłowo wykryto ruch, nie będzie możliwe uaktualnianie modelu dla fałszywie sklasyfikowanych pikseli. Prowadzi to do powstawania tak zwanych \textbf{duchów} (ang. \textit{ghosts}) - efektów błędnej detekcji, które są propagowane w dalszym procesie działaniu algorytmu. Alternatywą dla tego sposobu jest metoda \textbf{ślepa} (ang. \textit{blind update}). Choć zapobiega zakleszczeniom, które mogą zdarzyć się przy polityce konserwatywnej, daje bardzo słabe wyniki dla obiektów poruszających się wolno, jako że piksele uaktualniane są niezależnie od tego, do którego modelu zostały przydzielone.
+\section{Standardowe metody detekcji ruchu na scenie}
 \subsection{Średnia bieżąca}
 Algorytm średniej bieżącej to bezparametrowa metoda detekcji ruchu oparta na zależnościach statystycznych. Polega ona na analizie rozkładu prawdopodobieństwa wystąpienia pewnych wartości jasności (koloru) piksela na podstawie jego sąsiedztwa.\\
 \nocite{kheng2011mean}
@@ -139,12 +163,21 @@ ViBE (ang. \textit{VIsual Background Extractor}) porzuca koncepcję estymacji po
 \subsubsection{Opis metody}
 Niech piksel $x$, którego wartość w przestrzeni barwnej oznaczona jest jako $v(x)$, reprezentowany jest w czasie jako zbiór poprzednich wartości $v_{i}$:
 \begin{equation}
+\label{eq:prevValVibe}
 M(x) = \left\{v_{1}, v_{2}, ..., v_{n}\right\}
 \end{equation}
 Klasyfikacja $x$ odbywa się poprzez zbadanie odległości $v(x)$ od każdego elementu ze zbioru $M(x)$. Jeśli jest ona mniejsza od pewnego ustalonego progu ($v(x)$ i $v_{k}$ są odpowiednio bliskie), następuje zwiększenie licznika odpowiadającego pewnemu stopniowi podobieństwa badanego piksela do swojej historii. Po przekroczeniu pewnego progu podobieństwa piksel klasyfikowany jest jako tło, dalsze sprawdzanie odległości można pominąć.
+\paragraph{Inicjalizacja modelu tła \\}
+W odróżnieniu od wielu innych metod, uczących się na sekwencji testowej, inicjalizacja tła w algorytmie ViBE może odbywać się na podstawie pojedynczej ramki. Umożliwia to nie tylko szybki start faktycznej detekcji, ale także błyskawiczną adaptację do nagłych zmian oświetlenia na scenie. Ponieważ w pojedynczej ramce nie są zawarte żadne informacje na temat zachowania piksela w czasie, budowanie wzorca odbywa się na podstawie jego sąsiedztwa i wynika z założenia, że ich dystrybucje czasowe są podobne. Z tego też powodu dla piksela $x$ zbiór $M(x)$ (równanie \ref{eq:prevValVibe}) wypełniany jest losowo wybranymi wartościami z jego otoczenia. W zależności od rozmiaru sąsiedztwa i liczności zbioru $M$ niektóre wartości mogą zostać wylosowane wielokrotnie.\\
+Ryzykiem towarzyszącym takiemu podejściu jest możliwość powstawania wspomnianych już 'duchów' - jeśli w próbkowanej ramce znajduje się choćby fragment obiektu będącego w ruchu, sklasyfikowany zostaje on błędnie jako tło. Z tego powodu odsłonięty w kolejnych ramkach prawdziwy dalszy plan wykrywany jest jako obiekt poruszający się. Z tym zjawiskiem radzi sobie jednak mechanizm uaktualniania tła.
+\paragraph{Utrzymywanie modelu \\}
+Jak wspomniano, raptowne zmiany oświetlenia i artefakty pozostałe po błędnej klasyfikacji mogą zaburzać proces detekcji. Aby uniezależnić się od tych czynników, autorzy rozwiązania zaproponowali proces uaktualniania modelu tła polegający na zamianie wartości referencyjnych modelu aktualnie zakwalifikowanymi jako tło. W odróżnieniu jednak od podejść stosowanych w innych algorytmach, polegających na pozbywaniu się wartości najstarszych bądź z wykorzystaniem informacji o częstości występowania (wadze) reprezentacji piksela w przeszłości, postanowili użyć metody losowej, biorącej pod uwagę funkcję gęstości prawdopodobieństwa. Zmodyfikowali więc metodę konserwatywnej aktualizacji modelu tła w taki sposób, aby dodatkowo wykorzystywała informację o sąsiedztwie. Ponadto, aktualizacja tła nie odbywa się dla każdego piksela co ramkę - przy klasyfikacji dokonywana jest losowa decyzja, czy dana wartość ma zastąpić starą próbkę. Ponieważ używana jest metoda konserwatywna, w celu pozbycia się ryzyka propagacji błędnej klasyfikacji od czasu do czasu aktualizacja tła odbywa się na podstawie sąsiednich pikseli, jak opisano w sekcji dotyczącej inicjalizacji tła.\\ \\ \\
+\begin{LARGE}
+\textcolor{red}{WYNIKI DLA ViBE}
+\end{LARGE}
 \subsection{PBAS}
 \cite{hofmann2012background}
-\section{Standardowe metody a dynamiczne tło}
+%\section{Standardowe metody a dynamiczne tło}
 \section{Narzędzia}
 \subsection{Język C++}
 \subsection{Biblioteka OpenCV}
