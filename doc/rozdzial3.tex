@@ -61,7 +61,29 @@ tr(J_{F}) =
 może zostać bezpośrednio wykorzystany do klasyfikacji pikseli jako należących do obiektu poruszającego się bądź statycznego z pominięciem kosztownej dekompozycji macierzy.
 \subsection{Split Gaussian Models}
 \label{sec:SG}
-Metoda ta jest na modelach probabilistycznych wyznaczanych dla każdego z pikseli. Różnica w podejściu prezentowanym w tym artykule polega na tym, iż modele powstają osobno dla tła i obiektów pierwszoplanowych.
+Jak wspomniana, modele tła oparte na gaussowskim rozkładzie prawdopodobieństwa są szeroko stosowane w tematyce detekcji ruchu. Również i w metodzie opisywanej w tej sekcji postanowiono skorzystać z podobnego podejścia. Różnica polega jednak na tym, iż zamiast tworzyć jeden multimodalny model łączący tło i pierwszy plan, postanowiono odseparować je, stosując także zmienną ilość gaussianów inkorporowanych do modelu.\\
+Każdy nowy piksel porównywany jest z K poprzednimi dystrybucjami, gdzie K to parametr dostosowujący się w zależności od warunków. Zgodność z modelem tła ustalana jest na podstawie wzoru:
+\begin{equation}
+D_{min}(x,y) = \min_{i\in K}\max_{j\in C}((I_{t}(x,y)-\mu_{i,j})^2-T_{b}\cdot\sigma^2)
+\end{equation}
+Piksel przypisany zostaje do modelu tła jeśli pasuje do któregokolwiek z gaussianów. $T_{b}$ to ustalony próg, oznaczający liczbę odchyleń standardowych, $\sigma = \sum_{i}^{k}\omega_{i}\sigma_{i}$. Oznacza to, że każdemu pikselowi odpowiadać będzie $K\times C$ modeli Gaussa, gdzie $C$ oznacza ilość kanałów - dla modelu RGB $C = 3$. Uproszczeniem jest stosowanie takiej samej wagi $\omega$ i wariancji $\sigma$ dla wszystkich kanałów.
+\paragraph{}
+Do modelowania pierwszego planu używany jest pojedynczy model gaussowski. Służy on do rozróżniania obiektów zatrzymanych i niejednoznacznych detekcji, następujących na przykład w obecności szumów. Te drugie występują w obszarach, które zostały zaklasyfikowane jako tło przez FT, natomiast SG wykrył je jako pierwszy plan. Przyporządkowywane są do modelu pierwszego planu tylko jeśli różnica między nimi a ich średnimi wartościami jest mniejsza od pewnego ustalonego progu.
+\paragraph{}
+Modele tła i pierwszego planu uaktualniane są na bieżąco, aby jak najbardziej ograniczyć ilość fałszywych detekcji spowodowanych zmianami oświetlenia bądź drobnym ruchem sceny. Stosowana jest tu metoda konserwatywna. Do tego procesu stosowane są następujące wzory:
+\begin{equation}
+\mu_{t} = (1-\alpha)M\mu_{t-1}+\alpha MI_{t}
+\end{equation}
+\begin{equation}
+\sigma_{t}^2 = (1-\alpha)M\sigma_{t-1}^2+\alpha M(I_{t}-\mu)^{T}\alpha(I_{t}-\mu)
+\end{equation}
+\begin{equation}
+\omega_{i,t} = (1-\alpha)\omega_{i,t-1}+\alpha M
+\end{equation}
+\begin{equation}
+M = (1-F_{B})\cup(F_{amb}-F_{S})
+\end{equation}
+$M$ to maska aktualizacji, $\alpha$ - parametr uczenia się algorytmu, $F_{B}, F_{amb}, F_{S}$ to odpowiednio model pierwszego planu uzyskany za pomocą SG, wykryte rejony niejednoznaczne oraz model statycznych elementów sceny. Model pierwszego planu uaktualniany jest na podstawie negatywu maski dla tła.
 \subsection{Fuzja wyników}
 \label{sec:fuzja}
 Wyniki otrzymywane za pomocą metod \ref{sec:FT} i \ref{sec:SG} uzyskiwane są niezależnie od siebie. W skutek działania algorytmów tworzone są więc dwa modele - jeden, za pomocą tensora przepływu, reprezentujący wyłącznie ruch na scenie, drugi, dzięki SG, pozwalający na wykrycie także obiektów statycznych. Ponieważ jednak FT ma tendencję do tworzenia większych masek obiektów, niż powinny być w rzeczywistości, a metoda SG jest wrażliwa na zmiany oświetlenia i zakłócenia/szumy na scenie, aby uzyskać jak najlepsze rezultaty detekcji, eliminując błędne klasyfikacje pikseli dla każdej z metod, należy połączyć oba te rozwiązania.  Fuzji nie można dokonać jednak na przykład poprzez proste dodanie obu wyników. Zaproponowany został następujący model klasyfikacji:
@@ -114,10 +136,10 @@ LBSP_{R}(x_{c},y_{c}) =
 gdzie
 \begin{equation}
 d(x)=\left\{\substack{
-1 \, \, \mathrm{dla} \, \, |x|\leq T_{d} \\[0.5em]
-0 \, \, \mathrm{dla} \, \, |x|>T_{d}}\right.
+1 \; \mathrm{dla} \; |x|\leq T_{d} \\[0.5em]
+0 \; \mathrm{dla} \; |x|>T_{d}}\right.
 \end{equation}
-, przy czym Td jest progiem podobieństwa, ip - analizowanym pikselem sąsiedztwa P, ic - pikselem centralnym obszaru.\\
+, przy czym $T_{d}$ jest progiem podobieństwa, $i_{p}$ - analizowanym pikselem sąsiedztwa $P$, $i_{c}$ - pikselem centralnym obszaru.\\
 Centralny piksel może być wybrany zarówno z obszaru, z którego pochodzi analizowane sąsiedztwo, jak i z innego regionu - na tym samym obrazie bądź z innej ramki.
 \subsubsection{Subtrakcja tła}
 Subtrakcja tła z pomocą LBSP odbywa się na podstawie porównania obecnej ramki z modelem uzyskanym z F pierwszych. 
