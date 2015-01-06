@@ -1,10 +1,23 @@
 \chapter{Testy rozwiązań}
 \label{cha:testy}
 
-Brak sensownej zawartości ;)
-
-
-W celu ewaluacji działania opisanych w rozdziale \ref{cha:analiza} metod detekcji przeprowadzone zostały testy każdego z rozwiązań. Miały one na celu zbadać nie tylko dokładność detekcji, ale także i szybkość wykonywania algorytmu. Jest ona szczególnie ważna ze względu na fakt konieczności przetwarzania danych z kamery wizyjnej w czasie rzeczywistym oraz możliwość zaprogramowania rozwiązania na urządzeniach wbudowanych.
-
-
+W celu ewaluacji działania opisanych w rozdziale \ref{cha:analiza} metod detekcji przeprowadzone zostały testy każdego z rozwiązań. Miały one na celu zbadać nie tylko dokładność detekcji, ale także i szybkość wykonywania algorytmu. Jest ona szczególnie ważna ze względu na fakt konieczności przetwarzania danych z kamery wizyjnej w czasie rzeczywistym oraz możliwość zaprogramowania rozwiązania na urządzeniach wbudowanych. \\
+Do przeprowadzenia testów użyte zostały sekwencje ze strony changedetection.net, dotyczące dynamicznego ruchu na scenie. Zmierzona została szybkość detekcji, wyrażana jako ilość przetworzonych ramek na sekundę (ang. \textit{fps - frames per second}). W oparciu o ręcznie wyznaczane dla każdej ramki modele referencyjne (\textit{groundtruth}) przeprowadzona została także analiza skuteczności rozpatrywanych rozwiązań. Polegała ona na wyznaczeniu wartości:
+\begin{itemize}
+\item TP - \textit{True Positives}, czyli ilości pikseli zaklasyfikowanych poprawnie jako pierwszy plan
+\item FP - \textit{False Positives} - liczby pikseli wykrytych jako pierwszy plan, jednak w modelu referencyjnym będące tłem
+\item TN - \textit{True Negatives} - ilości zgodnych z modelem klasyfikacji pikseli tła
+\item FN - \textit{False Negatives}, oznaczającego liczbę pikseli z obszarów, na których nie został wykryty ruch pomimo przemieszczenia obiektów sceny
+\end{itemize}
+Wartość $F$ wyznaczana na podstawie wzorów:
+\begin{equation}
+P = \frac{TP}{TP+FP}
+R = \frac{TP}{TP+FN}
+F = \frac{2PR}{P+R}
+\end{equation}
+jest wskaźnikiem stopnia poprawności detekcji.
+\\
+\begin{LARGE}
+\textcolor{red}{WYNIKI DLA FTSG, CwisarDH itd.}
+\end{LARGE}
 

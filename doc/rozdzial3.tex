@@ -112,11 +112,35 @@ Praca \cite{6910014} opisuje metodę opierającą się na tzw. \textit{pattern m
 \item prostota przetwarzania materiału wideo
 \item użycie mechanizmu sieci neuronowych bez jego modyfikacji
 \end{itemize}
-Mechanizm wykorzystywanych tu sieci neuronowych oparty jest na węzłach pamięci RAM. Są one zdolne rozpoznać \textit{n}-bitowe wartości (w postaci binarnych krotek), pochodzące z czarno-białego obrazu wejściowego. Wiąże to wartości wejściowe węzła z obrazem relacją jeden-do-jednego za pomocą mapowania pseudolosowego.
+Mechanizm wykorzystywanych tu sieci neuronowych oparty jest na węzłach pamięci RAM. Przechowują one informacje o wzorcach występujących w obrazie. Procedura mapowania przebiega w następujący sposób:
+\begin{enumerate}
+\item Każdemu analizowanemu pikselowi obrazu zostaje przypisany osobny dyskryminator, służący do identyfikowania go w dalszych obliczeniach.
+\item Barwy piksela w używanej przestrzeni kolorów reprezentowane są w postaci binarnego obrazu $M \times n$, gdzie $M$ - rozdzielczość barwna, $n$ - ilość kanałów (dla RGB =3); wysokość ''słupka'' oznacza wartość odpowiedniej składowej.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=0.2\textwidth]{img/sample}
+\caption{Ilustracja konwersji}
+\end{figure}
+
+\item Każdemu pikselowi z tak uzyskanego obrazu zostaje przypisana etykieta w taki sposób, aby cały obszar został zmapowany oraz każda etykieta identyfikowała $n$ pikseli, których wartości '0' lub '1' łączone są kolejno w $n$-bitowe krotki. W ten sposób obraz zostaje pseudolosowo zmapowany na konkretne adresy RAM.
+\item Wartość pod uzyskanym adresem ustawiana jest na '1'.
+\end{enumerate}
+Procedurę mapowania wykonuje się dla próbek testowych w celu inicjalizacji tła. W ten sposób powstaje pewien wzorzec dla każdego piksela. Detekcja ruchu polega więc na porównaniu z nim każdej nowej wartości - jeśli nie spełniony jest wyznaczony próg podobieństwa, piksel klasyfikowany jest jako należący do obiektu pierwszoplanowego.
+\paragraph{}
+Po fazie inicjalizacyjnej następuje właściwa detekcja. Każdy z pikseli wejściowych ramki zmapowany zostaje w ten sam sposób, jak podczas sekwencji testowej. Następnie sprawdzane są wartości spod adresów uformowanych przez wszystkie nowo uzyskane krotki i liczona jest ilość wystąpień liczby '1'. Uzyskana liczba to \textit{odpowiedź dyskryminatora} $r$. Całkowite dopasowanie piksela do modelu tła następuje wtedy, gdy odpowiedź jest równa ilości etykiet użytych w mapowaniu $m$. Ponieważ jednak taki przypadek zdarza się rzadko, zwłaszcza jeśli brane jest pod uwagę otoczenie z dynamicznym tłem, w praktyce stosowany jest odpowiedni próg podobieństwa, będący niejako granicą stopnia dopasowania piksela do historii tła. Stosunek $m/r$ wyznacza procent podobieństwa - jeśli jest mniejszy niż przyjęta wartość graniczna, piksel traktowany jest jako pierwszoplanowy.
+\subsection{Uaktualnianie modelu tła i obsługa nagłych zmian na scenie}
+Metoda przedstawiona w tej sekcji jest również podejściem adaptacyjnym. Stosowana jest tu polityka konserwatywna. Wartość każdego piksela zaklasyfikowanego jako tło używana jest do ponownego treningu dyskryminatora. W ten sposób nowo uzyskane wartości również znajdują się we wzorcu.
+\paragraph{}
+W celu ulepszenia wydajności algorytmu dla obiektów nagle pojawiających się lub usuniętych ze sceny, dla każdego piksela zaklasyfikowanego jako pierwszoplanowy wykorzystywany jest bufor przechowujący jego wartości. Jeśli zostanie on przepełniony, następuje ponowne trenowanie dyskryminatora (z uprzednim opróżnieniem dotychczasowo przechowywanych danych) na podstawie historii piksela. Bufor jest opróżniany za każdym razem, kiedy piksel zostaje rozpoznany jako tło.
+\subsection{Dalsze operacje}
+W wyniku klasyfikacji pikseli otrzymywany jest binarny obraz, na którym wyodrębnione zostają obiekty poruszające się. Przed wyświetleniem poddawany jest on operacjom erozji i dylatacji, aby usunąć zakłócenia typu sól i pieprz.
 \section{Self-tuning Background Subtraction Algorithm}
 \label{sec:BinWang}
-Choć w ostatnich latach możliwości obliczeniowe maszyn, zarówno pod względem ilości przetwarzanych danych, jak i prędkości, rozwijały się bardzo dynamicznie, obecni inżynierowie borykają się z problemami nie do przezwyciężenia. Częstotliwość taktowania procesorów o dotychczas stosowanej architekturze nie może być już bardziej zwiększana - spowodowane jest to fizycznymi ograniczeniami sprzętu. Sekwencyjne wykonywanie poleceń uzależnia więc czas działania algorytmu od prędkości obliczeniowej jednostki wykonującej operacje. Dla problemu opisywanego w tej pracy szybkość przetwarzania jest szczególnie ważna - standardowy format wideo to 25 klatek na sekundę. Oznacza to, iż w celu detekcji w czasie rzeczywistym, jedna ramka o określonej rozdzielczości musi zostać przetworzona w czasie 1/25 sekundy. Dlatego też autorzy rozwiązania opisanego w artykule \cite{6910012} postanowili zmierzyć się z tym problemem, opracowując metodę, która wykonuje potrzebne obliczenia dla każdego piksela niezależnie, dokonując klasyfikacji jedynie na podstawie historii jego jasności. Takie podejście umożliwia implementację w architekturze równoległej, jak choćby z wykorzystaniem mocy obliczeniowej GPU (ang. \textit{Graphics processing unit} - procesor graficzny) czy układów FPGA (ang. \textit{Field-programmable gate array}).
-
+Choć w ostatnich latach możliwości obliczeniowe maszyn, zarówno pod względem ilości przetwarzanych danych, jak i prędkości, rozwijały się bardzo dynamicznie, obecni inżynierowie borykają się z problemami nie do przezwyciężenia. Częstotliwość taktowania procesorów o dotychczas stosowanej architekturze nie może być już bardziej zwiększana - spowodowane jest to fizycznymi ograniczeniami sprzętu. Sekwencyjne wykonywanie poleceń uzależnia więc czas działania algorytmu od prędkości obliczeniowej jednostki wykonującej operacje. Dla problemu opisywanego w tej pracy szybkość przetwarzania jest szczególnie ważna - standardowy format wideo to 25 klatek na sekundę. Oznacza to, iż w celu detekcji w czasie rzeczywistym, jedna ramka o określonej rozdzielczości musi zostać przetworzona w czasie 1/25 sekundy. Dlatego też autorzy rozwiązania opisanego w artykule \cite{6910012} postanowili zmierzyć się z tym problemem, opracowując metodę, która wykonuje potrzebne obliczenia dla każdego piksela niezależnie, dokonując klasyfikacji jedynie na podstawie historii jego jasności. Takie podejście umożliwia implementację w architekturze równoległej, jak choćby z wykorzystaniem mocy obliczeniowej GPU (ang. \textit{Graphics processing unit} - procesor graficzny) czy układów FPGA (ang. \textit{Field-programmable gate array}).\\
+\begin{LARGE}
+\textcolor{red}{DALSZY CIĄG OPISU METODY}
+\end{LARGE}
 \section{SuBSENSE}
 Zaletą metody przedstawionej w \cite{stflexible} jest brak konieczności testowania algorytmu dla każdego obserwowanego otoczenia w celu dostosowania parametrów dających najlepsze wyniki. Ze względu na mechanizm sprzężenia zwrotnego zastosowany w tym podejściu, są one dostosowywane automatycznie, pozwalając uzyskać bardzo dobre wyniki nawet w zmieniających się warunkach. SubSENSE (\textit{Self-Balanced SENsitivity SEgmenter}) to kolejna z metod opierających się na subtrakcji tła, postanowiono jednak podejść do tego zagadnienia w nieco inny sposób. Główne operacje realizowane przez ten algorytm to:
 \begin{itemize}
@@ -146,7 +170,7 @@ Subtrakcja tła z pomocą LBSP odbywa się na podstawie porównania obecnej ramk
 \paragraph{Faza inicjalizacyjna \\}
 Analiza pierwszej ramki opiera się na wyznaczeniu LBSP  jest jedynie wewnątrz obszaru (ip i ic znajdują się na tej samej ramce). Dla regionu 5 x 5 z wybranymi pikselami sąsiedztwa w liczbie 16 otrzymywane są w ten sposób 16-bitowe wyniki. Ponieważ dla każdego kanału (R, G i B) LBSP wyznaczane jest osobno, po połączeniu uzyskuje się ciąg 48-bitowy. Jeśli w sekwencji testowej dany ciąg powtórzony jest przynajmniej B razy, region oznaczony zostaje jako tło. W modelu M zapisane zostają wartości jasności odpowiadających wzorcowi pikseli. Następnie poddane analizie zostają kolejne ramki ze zbioru F, na podstawie których dokonuje się aktualizacji modelu tła. Po fazie inicjalizacyjnej model pozostaje niezmienny.
 \paragraph{Detekcja obiektów \\}
-Detekcja obiektów odbywa się na zasadzie porównywania kolejnych ramek z modelem tła. LBSP wyznaczane jest tutaj międzyramkowo, to znaczy piksele ip brane są z aktualnej ramki, ic - z odpowiadającego piksela tła. Decyzja o tym, gdzie piksel ma zostać zaklasyfikowany (bg - tło, fg - pierwszy plan), podejmowana jest w następujący sposób:
+Detekcja obiektów odbywa się na zasadzie porównywania kolejnych ramek z modelem tła. LBSP wyznaczane jest tutaj międzyramkowo, to znaczy piksele $i_{p}$ brane są z aktualnej ramki, $i_{c}$ - z odpowiadającego piksela tła. Decyzja o tym, gdzie piksel ma zostać zaklasyfikowany (bg - tło, fg - pierwszy plan), podejmowana jest w następujący sposób:
 \begin{equation}
 L_{f}(x,y)=\left\{\substack{
 bg \, \, H(LBSP_{f}(x,y),LBSP_{M}(x,y))\leq T_{h} \\[0.5em]
@@ -154,8 +178,14 @@ fg \, \, H(LBSP_{f}(x,y),LBSP_{M}(x,y))>T_{h}}\right.
 \end{equation}
 , gdzie H(•) - odległość Hamminga (wektorowa miara odmienności dwóch ciągów takiej samej długości), Th - próg odległości.
 \subsection{Mechanizm działania}
-Początkowy model tła wyznaczany jest na podstawie pierwszych próbek nagrania. Tworzona jest statystyczna mapa wartości każdego piksela. Jeśli aktualna reprezentacja piksela x przetnie się z minimum 2 próbkami, klasyfikowany jest on jako element tła i odpowiadającej mu pozycji na mapie segmentacji przypisana zostaje wartość St(x) = 0. W czasie działania algorytmu, w celu dostosowania się do ewentualnych zmian oświetlenia bądź innych czynników, próbki w modelu tła są losowo zastępowane przez nowe wartości.
+Początkowy model tła wyznaczany jest na podstawie pierwszych próbek nagrania. Tworzona jest statystyczna mapa wartości każdego piksela. Jeśli aktualna reprezentacja piksela x przetnie się z minimum 2 próbkami, klasyfikowany jest on jako element tła i odpowiadającej mu pozycji na mapie segmentacji przypisana zostaje wartość St(x) = 0. W czasie działania algorytmu, w celu dostosowania się do ewentualnych zmian oświetlenia bądź innych czynników, próbki w modelu tła są losowo zastępowane przez nowe wartości.\\
+\begin{LARGE}
+\textcolor{red}{DALSZY CIĄG OPISU METODY}
+\end{LARGE}
 \section{Spectral-360}
-W pracy \cite{6910013}
+\cite{6910013}\\
+\begin{LARGE}
+\textcolor{red}{OPIS METODY}
+\end{LARGE}
 
 
