@@ -137,10 +137,42 @@ W celu ulepszenia wydajności algorytmu dla obiektów nagle pojawiających się 
 W wyniku klasyfikacji pikseli otrzymywany jest binarny obraz, na którym wyodrębnione zostają obiekty poruszające się. Przed wyświetleniem poddawany jest on operacjom erozji i dylatacji, aby usunąć zakłócenia typu sól i pieprz.
 \section{Self-tuning Background Subtraction Algorithm}
 \label{sec:BinWang}
-Choć w ostatnich latach możliwości obliczeniowe maszyn, zarówno pod względem ilości przetwarzanych danych, jak i prędkości, rozwijały się bardzo dynamicznie, obecni inżynierowie borykają się z problemami nie do przezwyciężenia. Częstotliwość taktowania procesorów o dotychczas stosowanej architekturze nie może być już bardziej zwiększana - spowodowane jest to fizycznymi ograniczeniami sprzętu. Sekwencyjne wykonywanie poleceń uzależnia więc czas działania algorytmu od prędkości obliczeniowej jednostki wykonującej operacje. Dla problemu opisywanego w tej pracy szybkość przetwarzania jest szczególnie ważna - standardowy format wideo to 25 klatek na sekundę. Oznacza to, iż w celu detekcji w czasie rzeczywistym, jedna ramka o określonej rozdzielczości musi zostać przetworzona w czasie 1/25 sekundy. Dlatego też autorzy rozwiązania opisanego w artykule \cite{6910012} postanowili zmierzyć się z tym problemem, opracowując metodę, która wykonuje potrzebne obliczenia dla każdego piksela niezależnie, dokonując klasyfikacji jedynie na podstawie historii jego jasności. Takie podejście umożliwia implementację w architekturze równoległej, jak choćby z wykorzystaniem mocy obliczeniowej GPU (ang. \textit{Graphics processing unit} - procesor graficzny) czy układów FPGA (ang. \textit{Field-programmable gate array}).\\
-\begin{LARGE}
-\textcolor{red}{DALSZY CIĄG OPISU METODY}
-\end{LARGE}
+Choć w ostatnich latach możliwości obliczeniowe maszyn, zarówno pod względem ilości przetwarzanych danych, jak i prędkości, rozwijały się bardzo dynamicznie, obecni inżynierowie borykają się z problemami nie do przezwyciężenia. Częstotliwość taktowania procesorów o dotychczas stosowanej architekturze nie może być już bardziej zwiększana - spowodowane jest to fizycznymi ograniczeniami sprzętu. Sekwencyjne wykonywanie poleceń uzależnia więc czas działania algorytmu od prędkości obliczeniowej jednostki wykonującej operacje. Dla problemu opisywanego w tej pracy szybkość przetwarzania jest szczególnie ważna - standardowy format wideo to 25 klatek na sekundę. Oznacza to, iż w celu detekcji w czasie rzeczywistym, jedna ramka o określonej rozdzielczości musi zostać przetworzona w czasie 1/25 sekundy. Dlatego też autorzy rozwiązania opisanego w artykule \cite{6910012} postanowili zmierzyć się z tym problemem, opracowując metodę, która wykonuje potrzebne obliczenia dla każdego piksela niezależnie, dokonując klasyfikacji jedynie na podstawie historii jego jasności. Takie podejście umożliwia implementację w architekturze równoległej, jak choćby z wykorzystaniem mocy obliczeniowej GPU (ang. \textit{Graphics processing unit} - procesor graficzny) czy układów FPGA (ang. \textit{Field-programmable gate array}).
+\paragraph{}
+Głównym założeniem tego rozwiązania jest przetwarzanie na poziomie piksela, co pozwala uniknąć konieczności badania wartości sąsiedztwa, a co za tym idzie - umożliwia prostszą implementację na platformie równoległej. Podobnie jak w przypadku opisywanych wcześniej metod, tworzony model tła składa się ze zbiorów wartości dopuszczalnych dla poszczególnych pikseli, a klasyfikacja odbywa się poprzez sprawdzanie dopasowania do wzorca. Zamiast jednak dokonywać losowej podmiany elementów modelu bądź odrzucać najstarsze wartości, autorzy proponują eliminację próbek na podstawie wyliczanej efektywności danego szablonu.
+\subsection{Szablony}
+Model tła składa się z $K+1$ szablonów dla każdego piksela: jednego długoterminowego $T_{0}$ i $K$ krótkotrwałych $T_{1}$, $T_{2}$, ..., $T_{K}$. W każdym z nich zawiera się wartość piksela tła $B_{k}$ i miernik efektywności $C_{k}$. Szeregowane są one w taki sposób, by wartość $C$ była największa w $T_{0}$ i malała aż do $T_{K}$. W $T_{0}$ przechowywana jest wartość piksela najczęściej występującego na obrazie.
+\subsection{Klasyfikacja}
+Segmentacja obiektów pierwszoplanowych odbywa się na podstawie porównania pikseli z aktualnie analizowanej ramki z wartościami tła przechowywanych w szablonach (odpowiednio dla każdego piksela).  Sprawdzana jest odległość wartości obecnego piksela od każdej z próbek tła - jeśli $|B_{k}(x)-I(x)|\leq \varepsilon$ ($\varepsilon$ - próg tolerancji), $x$ sklasyfikowany zostaje on jako tło. Proces ten rozpoczyna się od szablonu $T_{0}$ i przerywany jest w momencie znalezienia dopasowania. Jeśli wszystkie próbki zostaną sprawdzone i okaże się, że piksel nie pasuje do żadnej z nich, traktowany jest jako pierwszy plan.
+\paragraph{}
+W celu poprawienia wyników detekcja przeprowadzana jest także na obrazie o zmniejszonej rozdzielczości. Pozwala to na eliminację zakłóceń o wysokiej częstotliwości. Aktualna ramka oraz szablony $T_{0}$ i $T_{1}$ próbkowane są w dół za pomocą średnich wartości z bloków $N$x$N$, po czym następuje detekcja analogiczna dla obrazu w wysokiej rozdzielczości. Otrzymane wyniki próbkowane są w górę i następuje łączenie rezultatów - tylko piksele zaklasyfikowane do pierwszego planu w obu procesach utrzymują swą wartość.
+\subsection{Uaktualnianie modelu tła}
+Każdorazowo po dopasowaniu piksela do modelu tła dla detekcji w wysokiej rozdzielczości przeprowadzana jest inkorporacja nowej wartości. Aktualizacja szablonów przebiega w następujący sposób:
+\begin{algorithm}[H]
+ \KwData{indeks dopasowania $k$, $x$, $B_{k}(x)$, $I(x)$}
+ \KwResult{uaktualniony model tła dla $x$}
+ \For{$i \in {0,1,...,K}$}{
+  \uIf {$i == k$}{
+	$B_{i}(x) = (1-\alpha)B_{i}(x)+\alpha I(x)$ \\
+	$C_{i}(x)=C_{i}(x)+1$
+	}
+  \uElse{
+	$C_{i}(x)=C_{i}(x)-1$
+  }
+  }
+  
+ \caption{Pseudokod inkorporacji nowej wartości do modelu tła}
+\end{algorithm}
+ Widać, iż efektywność szablonów zostaje zmieniona - zwiększa się o 1 dla $T_{k}(x)$ (pierwszego, na którego podstawie piksel sklasyfikowany został jako tło), natomiast zmniejsza, również o 1, dla pozostałych. Jeśli wartość $C_{n}(x)$ osiągnie 0, szablon $T_{n}(x)$ eliminowany jest w dalszym procesie detekcji. Używany parametr $\alpha$ odpowiada za szybkość uczenia się nowych wartości. 
+ \paragraph{}
+Aktualizacja modelu tła powoduje ponowne szeregowanie szablonów względem efektywności. Autorzy rozwiązania proponują w tym celu proste sortowanie bąbelkowe, działające na szablonach od $T_{1}$ do $T_{K}$. Dla długotrwałego $T_{0}$ stosowana jest inna procedura - badana jest efektywność szablonu $T_{1}$; jeśli jest ona większa od pewnego ustalonego progu $\theta_{L}$ oraz od efektywności $T_{0}$, szablony zamieniane są ze sobą, a $C_{0}$ ustawiane jest na $\gamma \times \theta_{L}$.
+\paragraph{}
+W celu inkorporacji do modelu tła wartości przez odpowiednio długi okres klasyfikowanych jako należące do pierwszego planu, szablony o najmniejszej efektywności są wymieniane na nowe. Służy to poprawie detekcji w przypadku długotrwałych zmian na scenie (np. włączeniu światła) oraz eliminacji błędów powstałych w wyniku błędnej klasyfikacji. Do realizacji tego procesu dla każdego piksela wykorzystywany jest pomocniczy szablon akumulacyjny. Jeśli piksel sklasyfikowany zostanie jako pierwszy plan, sprawdzana jest efektywność szablonu akumulacyjnego $C_{A}(x)$. Jeśli $C_{A}(x)=0$, zwiększona zostaje o 1, a aktualna wartość piksela przypisywana jest do $B_{A}(x)$. W przeciwnym wypadku obliczana jest odległość $dist(B_{A}(x),I(x))$ i jeśli jest ona mniejsza, niż próg $\varepsilon$, $C_{A}$ zwiększone zostaje o 1, jeśli nie - wartość $C_{A}$ maleje, również o 1. Gdy $C_{A}$ osiągnie pewną graniczną wartość, $B_{A}$ brane jest pod uwagę jako nowa wartość tła. Nie jest jednak włączana automatycznie - zamiana wartości w szablonie $T_{K}$ następuje wyłącznie jeśli $B_{A}$ zawiera się w modelu tła któregokolwiek z sąsiadów (brana jest pod uwagę tolerancja odległości $\varepsilon$).
+\subsection{Poprawa wyników detekcji}
+Z uwagi na możliwość występowania zakłóceń na scenie oraz konieczność dopasowywania parametru $\varepsilon$ w zależności od dynamiki piksela tła, zaprezentowane zostały mechanizmy radzące sobie z takimi zjawiskami. Monitorowana jest aktywność ''migających'' pikseli, czyli takich, które w procesie detekcji w pełnej rozdzielczości wykryte zostały jako pierwszy plan, natomiast w zmniejszonej rozdzielczości przydzielone zostały do modelu tła. Jeśli parametr ich dynamiki $A$, zmieniany każdorazowo przy wykryciu migotania piksela, osiągnie wartość graniczną $\beta_{TH}$, piksel eliminowany jest z wyniku detekcji. Poziom aktywności $A$ wykorzystywany jest także w procesie dynamicznej adaptacji progu $\varepsilon$ - jeśli $A$ przekroczy graniczną wartość $\beta_{INC}$, $\varepsilon = \varepsilon + \delta_{INC}$; w przypadku gdy $A<\beta_{DEC}$, $\varepsilon = \varepsilon - \delta_{DEC}$. \\
+\paragraph{}
+W metodzie tej stosowana jest reprezentacja YCbCr (\ref{sec:colorSpace}). Wszystkie używane parametry to trójwymiarowe wektory.
+
 \section{SuBSENSE}
 Zaletą metody przedstawionej w \cite{stflexible} jest brak konieczności testowania algorytmu dla każdego obserwowanego otoczenia w celu dostosowania parametrów dających najlepsze wyniki. Ze względu na mechanizm sprzężenia zwrotnego zastosowany w tym podejściu, są one dostosowywane automatycznie, pozwalając uzyskać bardzo dobre wyniki nawet w zmieniających się warunkach. SubSENSE (\textit{Self-Balanced SENsitivity SEgmenter}) to kolejna z metod opierających się na subtrakcji tła, postanowiono jednak podejść do tego zagadnienia w nieco inny sposób. Główne operacje realizowane przez ten algorytm to:
 \begin{itemize}
@@ -173,8 +205,8 @@ Analiza pierwszej ramki opiera się na wyznaczeniu LBSP  jest jedynie wewnątrz 
 Detekcja obiektów odbywa się na zasadzie porównywania kolejnych ramek z modelem tła. LBSP wyznaczane jest tutaj międzyramkowo, to znaczy piksele $i_{p}$ brane są z aktualnej ramki, $i_{c}$ - z odpowiadającego piksela tła. Decyzja o tym, gdzie piksel ma zostać zaklasyfikowany (bg - tło, fg - pierwszy plan), podejmowana jest w następujący sposób:
 \begin{equation}
 L_{f}(x,y)=\left\{\substack{
-bg \, \, H(LBSP_{f}(x,y),LBSP_{M}(x,y))\leq T_{h} \\[0.5em]
-fg \, \, H(LBSP_{f}(x,y),LBSP_{M}(x,y))>T_{h}}\right.
+bg \quad \text{dla $H(LBSP_{f}(x,y),LBSP_{M}(x,y))\leq T_{h}$} \\[0.5em]
+fg \quad \text{dla $H(LBSP_{f}(x,y),LBSP_{M}(x,y))>T_{h}$}}\right.
 \end{equation}
 , gdzie H(•) - odległość Hamminga (wektorowa miara odmienności dwóch ciągów takiej samej długości), Th - próg odległości.
 \subsection{Mechanizm działania}

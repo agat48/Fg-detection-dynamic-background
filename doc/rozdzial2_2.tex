@@ -72,11 +72,41 @@ Ryzykiem towarzyszącym takiemu podejściu jest możliwość powstawania wspomni
 \paragraph{Utrzymywanie modelu \\}
 Jak wspomniano, raptowne zmiany oświetlenia i artefakty pozostałe po błędnej klasyfikacji mogą zaburzać proces detekcji. Aby uniezależnić się od tych czynników, autorzy rozwiązania zaproponowali proces uaktualniania modelu tła polegający na zamianie wartości referencyjnych modelu aktualnie zakwalifikowanymi jako tło. W odróżnieniu jednak od podejść stosowanych w innych algorytmach, polegających na pozbywaniu się wartości najstarszych bądź z wykorzystaniem informacji o częstości występowania (wadze) reprezentacji piksela w przeszłości, postanowili użyć metody losowej, biorącej pod uwagę funkcję gęstości prawdopodobieństwa. Zmodyfikowali więc metodę konserwatywnej aktualizacji modelu tła w taki sposób, aby dodatkowo wykorzystywała informację o sąsiedztwie. Ponadto, aktualizacja tła nie odbywa się dla każdego piksela co ramkę - przy klasyfikacji dokonywana jest losowa decyzja, czy dana wartość ma zastąpić starą próbkę. Ponieważ używana jest metoda konserwatywna, w celu pozbycia się ryzyka propagacji błędnej klasyfikacji od czasu do czasu aktualizacja tła odbywa się na podstawie sąsiednich pikseli, jak opisano w sekcji dotyczącej inicjalizacji tła.\\ \\ \\
 \begin{LARGE}
-\textcolor{red}{WYNIKI DLA ViBE}
+\textcolor{red}{WYNIKI DLA DYNAMIC BG}
 \end{LARGE}
 \section{PBAS}
 Podobnie jak w przypadku algorytmu ViBE, autorzy rozwiązania opisywanego w tej sekcji proponują modelowanie tła przy pomocy zbioru poprzednich wartości piksela z losową ich aktualizacją. Podstawową różnicą jest jednak traktowanie parametrów aktualizacji jako zmiennych, dostosowujących się w czasie do wartości każdego z pikseli osobno. Opisywana w artykule \cite{hofmann2012background} metoda opiera się na klasyfikacji piksela na podstawie modelu tła $B$ w zależności od macierzy progów $R$. Uaktualnianie modelu w czasie odbywa się przy pomocy dostosowującego się w czasie i indywidualnego dla każdego piksela parametru $T$.
 \subsection{Segmentacja}
 W przypadku tej metody decyzja o tym, czy piksel $x$ należy do tła, odbywa się poprzez porównanie jego wartości z uprzednio zarejestrowanymi. Jeśli $I(x)$ (aktualnie analizowana wartość piksela) różni się od porównywanego modelu tła $B(x)$ o mniej, niż próg $R(x)$ dla przynajmniej $\#_{min}$ próbek, zostaje on zaklasyfikowany jako tło, w przeciwnym wypadku uznaje się, iż należy do pierwszego planu.
 \subsection{Uaktualnianie modelu tła}
-W celu uwzględnienia globalnych zmian występujących na scenie uaktualnianie modelu tła odbywa się zgodnie z metodą konserwatywną. Ponieważ w modelu znajduje się $N$ poprzednich próbek dla piksela, losowo wybrana z nich zostaje zastąpiona przez aktualnie pobraną jego wartość. Nie odbywa się to jednak każdorazowo - wybrany element ze zbioru jest podmieniany z prawdopodobieństwem $p = 1/T(x)$, czyli zależnie od parametru zawartego w macierzy aktualizacji. 
+W celu uwzględnienia globalnych zmian występujących na scenie uaktualnianie modelu tła odbywa się zgodnie z metodą konserwatywną. Ponieważ w modelu znajduje się $N$ poprzednich próbek dla piksela, losowo wybrana z nich $x_{k}$ zostaje zastąpiona przez aktualnie pobraną jego wartość. Nie odbywa się to jednak każdorazowo - wybrany element ze zbioru jest podmieniany z prawdopodobieństwem $p = 1/T(x)$, czyli zależnie od parametru zawartego w macierzy aktualizacji. Dodatkowo dla modelu, z którego wybrana została próbka ($B_{k}$), dokonywana jest z takim samym prawdopodobieństwem aktualizacja losowo wybranego piksela z sąsiedztwa $x_{k}$ jego wartością z ramki analizowanej.
+\paragraph{}
+Jak wspomniano, aktualizowane są tylko piksele zakwalifikowane jako tło. Modyfikacja modelu sąsiedztwa piksela odbywa się jednak bez sprawdzania żadnych warunków - oznacza to, iż może on zostać zmieniony pomimo przynależności wybranego piksela do modelu pierwszoplanowego. Powoduje to zmniejszenie czasu propagacji fałszywych detekcji oraz zanikanie obiektów zatrzymanych.
+\subsection{Dostosowywanie macierzy parametrów}
+W celu poprawnego działania algorytmu zarówno macierz progów $R$, jak i stopnia uczenia się $T$ muszą dostosowywać się do zmiennych warunków na scenie. Pozwala to uniknąć błędnych detekcji, zwłaszcza w przypadku dynamicznego ruchu tła.\\
+Przy aktualizacji macierzy $R$ wykorzystywane są informacje zawarte w pomocniczej tablicy macierzy odległości $D$. Modyfikowana jest ona przy każdorazowej aktualizacji modelu tła $B_{k}(x)$ jako minimalna odległość między wartością piksela a jego odpowiednikiem w modelu referencyjnym:
+\begin{equation}
+D_{k}(x)=min_{k}dist(I(x),B_{k}(x))
+\end{equation}
+Średnia wartość $\bar{d}_{min}(x)$ tak obliczonych współczynników dla każdego piksela odpowiada stopniowi dynamiki tła w danym punkcie. Macierz $R$ uaktualniana jest więc według poniższego równania:
+\begin{equation}
+R(x) = \left\{\substack{
+R(x)(1-R_{inc/dec}) \quad \text{dla $R(x)>\bar{d}_{min}(x)\cdot R_{scale}$} \\[0.5em]
+R(x)(1+R_{inc/dec}) \quad \text{w przeciwnym wypadku}
+} \right.
+\end{equation}
+, gdzie $R_{inc/dec}$ i $R_{scale}$ to pewne stałe.\\
+Ponieważ poprawność detekcji w dużej mierze zależy od dynamiki tła, parametr $\bar{d}_{min}$ wykorzystywany jest również w przypadku aktualizacji macierzy $T$, od której zależy prawdopodobieństwo aktualizacji modelu tła:
+\begin{equation}
+T(x) = \left\{\substack{
+T(x)+\frac{T_{inc}}{\bar{d}_{min}(x)} \quad \text{jeśli $x$ należy do pierwszego planu} \\[0.5em]
+T(x)-\frac{T_{dec}}{\bar{d}_{min}(x)}) \quad \text{w przeciwnym wypadku}
+} \right.
+\end{equation}
+, gdzie $T_{inc}$ i $T_{dec}$ to stałe odpowiednio dla spadku i wzrostu prawdopodobieństwa.
+\paragraph{\\ \\}
+W celu likwidacji zakłóceń powstałych w wyniku fałszywych detekcji dla zaszumionych obszarów i drobnych niedoskonałości klasyfikacji, wyniki poddawane są dodatkowo filtracji medianowej.
+\\ \\ \\
+\begin{LARGE}
+\textcolor{red}{WYNIKI DLA DYNAMIC BG}
+\end{LARGE}
