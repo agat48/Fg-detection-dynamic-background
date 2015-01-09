@@ -10,11 +10,13 @@ Do przeprowadzenia testów użyte zostały sekwencje ze strony changedetection.n
 \item FN - \textit{False Negatives}, oznaczającego liczbę pikseli z obszarów, na których nie został wykryty ruch pomimo przemieszczenia obiektów sceny
 \end{itemize}
 Wartość $F$ wyznaczana na podstawie wzorów:
-\begin{equation}
-P = \frac{TP}{TP+FP}
-R = \frac{TP}{TP+FN}
-F = \frac{2PR}{P+R}
-\end{equation}
+\begin{align}
+\begin{split}
+P &= \frac{TP}{TP+FP} \\
+R &= \frac{TP}{TP+FN} \\
+F &= \frac{2PR}{P+R}
+\end{split}
+\end{align}
 jest wskaźnikiem stopnia poprawności detekcji.
 \\
 \begin{LARGE}

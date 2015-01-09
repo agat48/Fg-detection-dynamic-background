@@ -42,15 +42,11 @@ Takie podejście umożliwia stworzenie multomodalnej reprezentacji tła, co jest
 Głównym zagadnieniem dla tej metody jest kwestia doboru próbek, na podstawie których wyznaczane jest prawdopodobieństwo. Zbyt mała bądź źle dobrana ich ilość powoduje fałszywą detekcję w przypadku znacznej zmienności tła, zbyt duża - zawyżoną tolerancję, przez co piksele pierwszoplanowe zostają niekiedy sklasyfikowane jako tło. Próg tolerancji również musi się różnić w zależności od poziomu jasności pikseli, ponieważ w zacienionych obszarach z reguły dużo rzadziej występuje zaszumienie.
 \subsection{Uaktualnianie modelu tła}
 Jak wspomniano, do poprawnej detekcji w dłuższych przedziałach czasowych niezbędne jest ciągłe uaktualnianie modelu tła. Z tego też powodu odpowiednie wartości uaktualniane są zgodnie z następującymi wzorami:
-\begin{equation}
-w_{k,t} = w_{k,t-1}+\alpha(o_{k,t}-w_{k,t-1})
-\end{equation}
-\begin{equation}
-\mu_{k,t} = \mu_{k,t-1}+o_{k,t}\frac{\alpha (x_{t}-\mu_{k,t-1})}{w_{k,t}}
-\end{equation}
-\begin{equation}
+\begin{gather}
+w_{k,t} = w_{k,t-1}+\alpha(o_{k,t}-w_{k,t-1}) \\
+\mu_{k,t} = \mu_{k,t-1}+o_{k,t}\frac{\alpha (x_{t}-\mu_{k,t-1})}{w_{k,t}} \\
 \sigma^2_{k,t} = \sigma^2_{k,t-1}+o_{k,t}\frac{\alpha ((x_{t}-\mu_{k,t})^{T}(x_{t}-\mu_{k,t})-\sigma^2_{k,t-1})}{w_{k,t}}
-\end{equation}
+\end{gather}
 $\alpha$ jest parametrem ''uczącym'', $o$ to binarna wartość ustalana na 1 dla najbliższego komponentu spośród modeli $K$. Jeśli nie znaleziono wystarczająco bliskiego komponentu (odległego o mniej niż ustalony próg), nowy komponent tworzony jest z parametrami $w_{K+1,t} = \alpha, \mu{K+1,t}= x_{t}, \sigma_{K+1,t}=\sigma_{0}$. Jeśli nastąpi przepełnienie bufora komponentów, ten z najmniejszą wagą jest odrzucany. \\ \\ \\
 \begin{LARGE}
 \textcolor{red}{WYNIKI DLA DYNAMIC BG}
@@ -90,18 +86,22 @@ D_{k}(x)=min_{k}dist(I(x),B_{k}(x))
 \end{equation}
 Średnia wartość $\bar{d}_{min}(x)$ tak obliczonych współczynników dla każdego piksela odpowiada stopniowi dynamiki tła w danym punkcie. Macierz $R$ uaktualniana jest więc według poniższego równania:
 \begin{equation}
-R(x) = \left\{\substack{
-R(x)(1-R_{inc/dec}) \quad \text{dla $R(x)>\bar{d}_{min}(x)\cdot R_{scale}$} \\[0.5em]
-R(x)(1+R_{inc/dec}) \quad \text{w przeciwnym wypadku}
-} \right.
+R(x) = \left\{
+\begin{split}
+&R(x)(1-R_{inc/dec}) & \quad &\text{dla $R(x)>\bar{d}_{min}(x)\cdot R_{scale}$} \\
+&R(x)(1+R_{inc/dec}) & \quad &\text{w przeciwnym wypadku}
+\end{split}
+\right.
 \end{equation}
 , gdzie $R_{inc/dec}$ i $R_{scale}$ to pewne stałe.\\
 Ponieważ poprawność detekcji w dużej mierze zależy od dynamiki tła, parametr $\bar{d}_{min}$ wykorzystywany jest również w przypadku aktualizacji macierzy $T$, od której zależy prawdopodobieństwo aktualizacji modelu tła:
 \begin{equation}
-T(x) = \left\{\substack{
-T(x)+\frac{T_{inc}}{\bar{d}_{min}(x)} \quad \text{jeśli $x$ należy do pierwszego planu} \\[0.5em]
-T(x)-\frac{T_{dec}}{\bar{d}_{min}(x)}) \quad \text{w przeciwnym wypadku}
-} \right.
+T(x) = \left\{
+\begin{split}
+&T(x)+\frac{T_{inc}}{\bar{d}_{min}(x)} & \quad &\text{jeśli $x$ należy do pierwszego planu} \\
+&T(x)-\frac{T_{dec}}{\bar{d}_{min}(x)}) & \quad &\text{w przeciwnym wypadku}
+\end{split}
+\right.
 \end{equation}
 , gdzie $T_{inc}$ i $T_{dec}$ to stałe odpowiednio dla spadku i wzrostu prawdopodobieństwa.
 \paragraph{\\ \\}

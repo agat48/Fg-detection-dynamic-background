@@ -71,18 +71,12 @@ Piksel przypisany zostaje do modelu tła jeśli pasuje do któregokolwiek z gaus
 Do modelowania pierwszego planu używany jest pojedynczy model gaussowski. Służy on do rozróżniania obiektów zatrzymanych i niejednoznacznych detekcji, następujących na przykład w obecności szumów. Te drugie występują w obszarach, które zostały zaklasyfikowane jako tło przez FT, natomiast SG wykrył je jako pierwszy plan. Przyporządkowywane są do modelu pierwszego planu tylko jeśli różnica między nimi a ich średnimi wartościami jest mniejsza od pewnego ustalonego progu.
 \paragraph{}
 Modele tła i pierwszego planu uaktualniane są na bieżąco, aby jak najbardziej ograniczyć ilość fałszywych detekcji spowodowanych zmianami oświetlenia bądź drobnym ruchem sceny. Stosowana jest tu metoda konserwatywna. Do tego procesu stosowane są następujące wzory:
-\begin{equation}
-\mu_{t} = (1-\alpha)M\mu_{t-1}+\alpha MI_{t}
-\end{equation}
-\begin{equation}
-\sigma_{t}^2 = (1-\alpha)M\sigma_{t-1}^2+\alpha M(I_{t}-\mu)^{T}\alpha(I_{t}-\mu)
-\end{equation}
-\begin{equation}
-\omega_{i,t} = (1-\alpha)\omega_{i,t-1}+\alpha M
-\end{equation}
-\begin{equation}
+\begin{gather}
+\mu_{t} = (1-\alpha)M\mu_{t-1}+\alpha MI_{t} \\
+\sigma_{t}^2 = (1-\alpha)M\sigma_{t-1}^2+\alpha M(I_{t}-\mu)^{T}\alpha(I_{t}-\mu) \\
+\omega_{i,t} = (1-\alpha)\omega_{i,t-1}+\alpha M \\
 M = (1-F_{B})\cup(F_{amb}-F_{S})
-\end{equation}
+\end{gather}
 $M$ to maska aktualizacji, $\alpha$ - parametr uczenia się algorytmu, $F_{B}, F_{amb}, F_{S}$ to odpowiednio model pierwszego planu uzyskany za pomocą SG, wykryte rejony niejednoznaczne oraz model statycznych elementów sceny. Model pierwszego planu uaktualniany jest na podstawie negatywu maski dla tła.
 \subsection{Fuzja wyników}
 \label{sec:fuzja}
@@ -132,8 +126,8 @@ Po fazie inicjalizacyjnej następuje właściwa detekcja. Każdy z pikseli wejś
 \subsection{Uaktualnianie modelu tła i obsługa nagłych zmian na scenie}
 Metoda przedstawiona w tej sekcji jest również podejściem adaptacyjnym. Stosowana jest tu polityka konserwatywna. Wartość każdego piksela zaklasyfikowanego jako tło używana jest do ponownego treningu dyskryminatora. W ten sposób nowo uzyskane wartości również znajdują się we wzorcu.
 \paragraph{}
-W celu ulepszenia wydajności algorytmu dla obiektów nagle pojawiających się lub usuniętych ze sceny, dla każdego piksela zaklasyfikowanego jako pierwszoplanowy wykorzystywany jest bufor przechowujący jego wartości. Jeśli zostanie on przepełniony, następuje ponowne trenowanie dyskryminatora (z uprzednim opróżnieniem dotychczasowo przechowywanych danych) na podstawie historii piksela. Bufor jest opróżniany za każdym razem, kiedy piksel zostaje rozpoznany jako tło.
-\subsection{Dalsze operacje}
+W celu ulepszenia wydajności algorytmu dla obiektów nagle pojawiających się lub usuniętych ze sceny, dla każdego piksela zaklasyfikowanego jako pierwszoplanowy wykorzystywany jest bufor przechowujący jego wartości. Jeśli zostanie on przepełniony, następuje ponowne trenowanie dyskryminatora (z uprzednim opróżnieniem dotychczasowo przechowywanych danych) na podstawie historii piksela. Bufor jest opróżniany za każdym razem, kiedy piksel zostaje rozpoznany jako tło. \\ \\
+\paragraph{}
 W wyniku klasyfikacji pikseli otrzymywany jest binarny obraz, na którym wyodrębnione zostają obiekty poruszające się. Przed wyświetleniem poddawany jest on operacjom erozji i dylatacji, aby usunąć zakłócenia typu sól i pieprz.
 \section{Self-tuning Background Subtraction Algorithm}
 \label{sec:BinWang}
@@ -191,9 +185,12 @@ LBSP_{R}(x_{c},y_{c}) =
 \end{equation},
 gdzie
 \begin{equation}
-d(x)=\left\{\substack{
-1 \; \mathrm{dla} \; |x|\leq T_{d} \\[0.5em]
-0 \; \mathrm{dla} \; |x|>T_{d}}\right.
+d(x)=\left\{
+\begin{split}
+&1 & \quad &\text{dla $|x|\leq T_{d}$} \\
+&0 & \quad &\text{dla $|x|>T_{d}$}
+\end{split}
+\right.
 \end{equation}
 , przy czym $T_{d}$ jest progiem podobieństwa, $i_{p}$ - analizowanym pikselem sąsiedztwa $P$, $i_{c}$ - pikselem centralnym obszaru.\\
 Centralny piksel może być wybrany zarówno z obszaru, z którego pochodzi analizowane sąsiedztwo, jak i z innego regionu - na tym samym obrazie bądź z innej ramki.
@@ -204,16 +201,50 @@ Analiza pierwszej ramki opiera się na wyznaczeniu LBSP  jest jedynie wewnątrz 
 \paragraph{Detekcja obiektów \\}
 Detekcja obiektów odbywa się na zasadzie porównywania kolejnych ramek z modelem tła. LBSP wyznaczane jest tutaj międzyramkowo, to znaczy piksele $i_{p}$ brane są z aktualnej ramki, $i_{c}$ - z odpowiadającego piksela tła. Decyzja o tym, gdzie piksel ma zostać zaklasyfikowany (bg - tło, fg - pierwszy plan), podejmowana jest w następujący sposób:
 \begin{equation}
-L_{f}(x,y)=\left\{\substack{
-bg \quad \text{dla $H(LBSP_{f}(x,y),LBSP_{M}(x,y))\leq T_{h}$} \\[0.5em]
-fg \quad \text{dla $H(LBSP_{f}(x,y),LBSP_{M}(x,y))>T_{h}$}}\right.
+L_{f}(x,y)=\left\{
+\begin{split}
+&bg & \quad &\text{dla $H(LBSP_{f}(x,y),LBSP_{M}(x,y))\leq T_{h}$} \\
+&fg & \quad &\text{dla $H(LBSP_{f}(x,y),LBSP_{M}(x,y))>T_{h}$}
+\end{split}
+\right.
 \end{equation}
 , gdzie H(•) - odległość Hamminga (wektorowa miara odmienności dwóch ciągów takiej samej długości), Th - próg odległości.
 \subsection{Mechanizm działania}
-Początkowy model tła wyznaczany jest na podstawie pierwszych próbek nagrania. Tworzona jest statystyczna mapa wartości każdego piksela. Jeśli aktualna reprezentacja piksela x przetnie się z minimum 2 próbkami, klasyfikowany jest on jako element tła i odpowiadającej mu pozycji na mapie segmentacji przypisana zostaje wartość St(x) = 0. W czasie działania algorytmu, w celu dostosowania się do ewentualnych zmian oświetlenia bądź innych czynników, próbki w modelu tła są losowo zastępowane przez nowe wartości.\\
-\begin{LARGE}
-\textcolor{red}{DALSZY CIĄG OPISU METODY}
-\end{LARGE}
+Początkowy model tła wyznaczany jest na podstawie pierwszych próbek nagrania. Rejestrowane są historyczne wartości każdego piksela. W fazie detekcji - jeśli aktualna reprezentacja piksela x przetnie się z minimum 2 próbkami, klasyfikowany jest on jako element tła i odpowiadającej mu pozycji na mapie segmentacji przypisana zostaje wartość St(x) = 0. W czasie działania algorytmu, w celu dostosowania się do ewentualnych zmian oświetlenia bądź innych czynników, próbki w modelu tła są losowo zastępowane przez nowe wartości w myśl polityki konserwatywnej.
+\paragraph{}
+Do porównywania wartości używana jest tu metoda LBSP, przez co udaje się uzyskać informacje nie tylko o kolorze piksela, ale także jego podobieństwie do sąsiedztwa. Dla każdego kanału wyniki uzyskiwane są oddzielnie. Odległość między pikselami obliczana jest odpowiednio metodą L1 (zgodnie z geometrią taksówkową (ang. \textit{taxicab geometry}) dla koloru i dystansem Hamminga dla ciągu bitów uzyskanego z LBSP. Gdy próbki są oddalone od siebie o nie więcej niż progi $R_{color}$ i $R_{LBSP}$, stwierdzona zostaje ich zgodność i aktualny piksel klasyfikowany jest jako tło. Wartości $R_{color}$ oraz $R_{LBSP}$ wyznaczane są na podstawie ustalonych wartości $R_{color}^{0}$ i $R_{LBSP}^{0}$ dynamicznego parametru $R(x)$, o którym mowa będzie w dalszej sekcji:
+\begin{gather}
+R_{color} = R(x)\cdot R_{color}^{0} \\
+R_{LBSP} = 2^{R(x)}\cdot R_{LBSP}^{0}
+\end{gather}
+\subsection{Aktualizacja parametrów}
+Jak wspomniano, głównym założeniem tej metody jest jak największa automatyzacja procesu dostosowywania parametrów używanych w detekcji. Zmieniane są one dynamicznie przy analizie każdej nowej ramki. Aktualizacji podlegają macierze progów aktualizacji $R$, stopnia uczenia $T$ oraz dynamiki tła $D_{min}$ i $v$.
+\paragraph{}
+Wartości zawarte w macierzy $D_{min}$ używane są do aktualizacji pozostałych parametrów. Oznaczają one minimalny dystans pomiędzy pikselem a jego poprzednimi reprezentacjami, liczony jako średnia ruchoma z uzyskiwanych wyników pomiędzy kolejnymi wykonaniami algorytmu. Mechanizm aktualizacji samego $D_{min}$ można opisać następującym równaniem:
+\begin{equation}
+D_{min}(x) = D_{min}(x)\cdot (1-\alpha)+d_{t}(x)\cdot \alpha
+\end{equation}
+,gdzie $\alpha$ - parametr uczący, $d_{t}(x)$ - minimalna odległość między reprezentacją piksela $I(x)$ a wartościami zawartymi w $B(x)$. Aktualizacja $D_{min}$ odbywa się każdorazowo, niezależnie od wyniku klasyfikacji piksela, co umożliwia lepszą detekcję w przypadku dynamicznych scenariuszy.\\
+Kolejne równanie opisuje dynamiczną zmianę progu klasyfikacji dla piksela:
+\begin{equation}
+R(x) = \left\{
+\begin{split}
+&R(x) + v(x) & \quad &\text{dla $R(x)<(1+D_{min}(x)\cdot 2)^2$} \\
+&R(x) - \frac{1}{v(x)} & \quad &\text{w przeciwnym wypadku}
+\end{split}
+\right.
+\end{equation}
+Użyta tu wartość $v(x)$ to wskaźnik poziomu ''migotania'' piksela. Modyfikowana jest ona przez porównanie wyników detekcji $S_{t}$ i $S_{t-1}$ operacją XOR - dla tak otrzymanych pikseli $v$ wzrasta, dla pozostałych - maleje (o ile uzyskiwana wartość nie jest <0). \\
+Wspomniana losowa aktualizacja próbek w modelu tła zależna jest od macierzy $T$, w której zawarte są wartości, na podstawie których wyliczone zostaje prawdopodobieństwo podmiany $p = 1/T(x)$. Aktualizacja wartości odbywa się tu zgodnie ze wzorem:
+\begin{equation}
+T(x) = \left\{
+\begin{split}
+&T(x) + \frac{1}{v(x)\cdot D_{min}(x)} & \quad \text{dla $S(x)=1$} \\
+&T(x) - \frac{v(x)}{D_{min}(x)} & \quad \text{dla $S(x)=0$}
+\end{split}
+\right.
+\end{equation}
+Wartość $T(x)$ może zostać zmieniona ''ręcznie'' - dzieje się tak w przypadku gdy piksel klasyfikowany jest jako należący do pierwszego planu przez wystarczająco długi czas. Mechanizm ten ma na celu ograniczenie propagacji ''duchów'' w detekcji.
 \section{Spectral-360}
 \cite{6910013}\\
 \begin{LARGE}
