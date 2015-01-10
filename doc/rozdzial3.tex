@@ -1,7 +1,7 @@
-\chapter{Analiza aktualnie dostępnych rozwiązań}
+\chapter{Analiza najnowszych algorytmów segmentacji obiektów pierwszoplanowych}
 \label{cha:analiza}
 
-Choć opisane w poprzednim rozdziale metody dokonują segmentacji w większości poprawnie nawet przy obecności drobnego ruchu na scenie, opracowane zostały nowsze metody, radzące sobie z tym zagadnieniem jeszcze lepiej. W tej części pracy omówionych zostanie kilka z nich, według rankingu changedetection.net dających najlepsze rezultaty dla dynamicznego tła. Zawartych jest w nich wiele różnych podejść do problemu, począwszy od modelowania i subtrakcji tła, poprzez rozwiązania bazujące na heurystyce.
+Choć opisane w poprzednim rozdziale metody dokonują segmentacji w większości poprawnie nawet przy obecności drobnego ruchu na scenie, opracowane zostały nowsze metody, radzące sobie z tym zagadnieniem jeszcze lepiej. W tej części pracy omówione zostaną te, które według rankingu changedetection.net\footnote{changedetection.net to strona poświęcona zagadnieniu wykrywania zmian na scenie. Zawiera wyniki testów i informacje na temat rozwiązań nadsyłanych przez badaczy z całego świata wraz ze zbiorami danych, na których przeprowadzana jest weryfikacja metod.} dają najlepsze rezultaty dla dynamicznego tła. 
 
 %---------------------------------------------------------------------------
 
@@ -11,13 +11,13 @@ Choć opisane w poprzednim rozdziale metody dokonują segmentacji w większości
 Jednym z zaproponowanych rozwiązań omawianego w tej pracy problemu jest fuzja dwóch metod detekcji zmian na sekwencji wideo \cite{6910016}. Polega ona na wyliczeniu tensora przepływu (ang. \textit{Flux Tensor}) i modelowaniu tła za pomocą algorytmu bazującego na GMM opisanego w sekcji \ref{sec:GMM} z odseparowanymi modelami tła i pierwszego planu, dostosowującą się automatycznie przestrzennie i czasowo.
 Metoda ta dzieli się na trzy główne moduły:
 \begin{itemize}
-\item detekcja zmian na poziomie piksela - obliczane są osobno modele dla ruchu (\textit{flux tensor} - FT) i dla zmian jasności/kolorów na obrazie (\textit{split Gaussian model} - SG)
-\item fuzja otrzymanych wyników - stosując odpowiednie reguły łączone są modele FT i SG, aby zredukować ilość fałszywych detekcji
+\item detekcja zmian na poziomie piksela - obliczane są osobno modele dla ruchu (\textit{flux tensor} - FT) i dla zmian jasności/kolorów na obrazie (\textit{split gaussian model} - SG)
+\item fuzja otrzymanych wyników - stosując odpowiednie reguły łączone są modele FT i SG, aby zredukować liczbę fałszywych detekcji
 \item klasyfikacja obiektów - obsługa przypadków obiektów zatrzymanych bądź usuniętych ze sceny
 \end{itemize}
 \subsection{Flux Tensor}
 \label{sec:FT}
-Tensor przepływu pozwala na wykrycie zmian przemieszczenia obiektów sceny pomiędzy kolejnymi ramkami nagrania. Może on być definiowany jako wariacja czasowa przepływu optycznego w lokalnej przestrzeni 3D. Wykorzystanie tej metody umożliwia pominięcie kosztownego rozkładu macierzy na wartości i wektory własne przy uzyskiwaniu informacji o ruchu na scenie.\\
+Tensor przepływu pozwala na wykrycie zmian przemieszczenia obiektów sceny pomiędzy kolejnymi ramkami nagrania. Może on być definiowany jako wariancja czasowa przepływu optycznego w lokalnej przestrzeni 3D. Wykorzystanie tej metody umożliwia pominięcie kosztownego rozkładu macierzy na wartości i wektory własne przy uzyskiwaniu informacji o ruchu na scenie.\\
 Najbardziej istotne dla tej metody są następujące cechy:
 \begin{itemize}
 \item niewrażliwość na cienie
