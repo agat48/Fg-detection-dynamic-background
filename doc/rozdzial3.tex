@@ -112,23 +112,37 @@ Praca \cite{6910014} opisuje metodę opierającą się na tzw. \textit{pattern m
 \begin{itemize}
 \item realizowanie obliczeń na podstawie wartości piksela bez konieczności uzyskiwania informacji na temat jego sąsiedztwa
 \item prostota przetwarzania materiału wideo
-\item użycie mechanizmu sieci neuronowych bez jego modyfikacji
+\item użycie mechanizmu sieci neuronowych, usprawniającego obliczenia
 \end{itemize}
-Mechanizm wykorzystywanych tu sieci neuronowych oparty jest na węzłach pamięci RAM. Przechowują one informacje o wzorcach występujących w obrazie. Procedura mapowania przebiega w następujący sposób:
+Używane w metodzie sieci neuronowe złożone są z węzłów w postaci komórek pamięci RAM. Dzięki odpowiedniej procedurze mapowania wartości pikseli analizowanego nagrania przechowują one informacje o wzorcach występujących w obrazie. Procedura mapowania  przebiega w następujący sposób:
 \begin{enumerate}
 \item Każdemu analizowanemu pikselowi obrazu zostaje przypisany osobny dyskryminator, służący do identyfikowania go w dalszych obliczeniach.
-\item Barwy piksela w używanej przestrzeni kolorów reprezentowane są w postaci binarnego obrazu $M \times n$, gdzie $M$ - rozdzielczość barwna, $n$ - ilość kanałów (dla RGB =3); wysokość ''słupka'' oznacza wartość odpowiedniej składowej.
+\item Barwy piksela w używanej przestrzeni kolorów reprezentowane są w postaci binarnego obrazu $M \times n$, gdzie $M$ - maksymalna wartość jasności, $n$ - liczba kanałów (dla RGB =3); wysokość ''słupka'' oznacza wartość odpowiedniej składowej.
 
-\begin{figure}[!htb]
+\begin{figure}[!h]
 \centering
 \includegraphics[width=0.2\textwidth]{img/sample}
-\caption{Ilustracja konwersji}
+\caption{Ilustracja konwersji \label{fig:binPixel}}
 \end{figure}
 
 \item Każdemu pikselowi z tak uzyskanego obrazu zostaje przypisana etykieta w taki sposób, aby cały obszar został zmapowany oraz każda etykieta identyfikowała $n$ pikseli, których wartości '0' lub '1' łączone są kolejno w $n$-bitowe krotki. W ten sposób obraz zostaje pseudolosowo zmapowany na konkretne adresy RAM.
+
+\begin{figure}[!h]
+\centering
+\includegraphics[width=0.2\textwidth]{img/sample}
+\caption{Łączenie wartości pikseli w krotki \label{fig:map}}
+\end{figure}
+
+
 \item Wartość pod uzyskanym adresem ustawiana jest na '1'.
 \end{enumerate}
-Procedurę mapowania wykonuje się dla próbek testowych w celu inicjalizacji tła. W ten sposób powstaje pewien wzorzec dla każdego piksela. Detekcja ruchu polega więc na porównaniu z nim każdej nowej wartości - jeśli nie spełniony jest wyznaczony próg podobieństwa, piksel klasyfikowany jest jako należący do obiektu pierwszoplanowego.
+Dyskryminatory dla każdego piksela zawarte są w tablicy $x\times y$, gdzie odpowiednio $x$ to wysokość, a $y$ - szerokość nagrania. Ponieważ autorzy rozwiązania zbadali, iż system najlepiej sprawdza się dla 16-bitowych krotek, również taka rozdzielczość adresowa została przyjęta w tej pracy. Aby zapewnić możliwość zapisu wartości z każdej krotki, dla każdego dyskryminatora zarezerwowanych musi zostać $2^16$ bitów w pamięci. Fizyczne adresy w pamięci RAM wskazują na 8-bitowe struktury, dlatego bezpośrednie odwoływanie się do komórek pamięci byłoby bardzo nieefektywne - wymagałoby wykorzystywania ośmiokrotnie większej liczby zasobów, które w rezultacie nie byłyby używane. Dlatego też dyskryminatory przedstawione zostały w postaci $4096$-elementowych tablic $16$-bitowego typu unsigned short. Poziomy jasności pikseli na poszczególnych kanałach ograniczone zostały do przedziału [0, 192], dlatego kolor piksela reprezentowany jest za pomocą binarnego obrazu $192 \times 3$. Używane etykiety mieszczą się w przedziale [1, 36], każda z nich pojawia się na obrazie dokładnie 16 razy. 
+\paragraph{}
+Procedurę mapowania wykonuje się dla próbek testowych w celu inicjalizacji tła. Dla każdego z pikseli wejściowych $I(x,y)$ wyznaczana jest jego reprezentacja binarna (przykład takiej konwersji na rys. \ref{fig:binPixel}), a następnie zgodnie z mapą etykiet tworzone są 16-bitowe krotki odpowiadające wartościom kolejnych pikseli binarnego obrazu. Ilustracja procedury zamieszczona jest na rys. \ref{fig:map}. Uzyskane krotki przekształcone zostają na adresy dyskryminatora, pod którymi wpisywana jest wartość '1'. W ten sposób powstaje pewien wzorzec dla każdego piksela.
+\paragraph{}
+Przykładowo, krotka $0100101010010110$ wskazuje na $19094$-ty bit dyskryminatora, powinien on więc uzyskać wartość ''1''. Aby uzyskać do niego dostęp, należy najpierw znaleźć jego pozycję w tablicy. Ponieważ tablica dyskryminatora przechowuje wartości 16-bitowe, indeks wyznaczany jest poprzez podzielenie bez reszty obliczonego adresu przez liczbę 16 (równoznaczne z przesunięciem bitowym o 4 bity w prawo). Konkretna pozycja piksela wyznaczana jest jako reszta z dzielenia adresu przez 16.   
+\paragraph{}
+Detekcja zmian na scenie polega więc na porównaniu z nim każdej nowej wartości - jeśli nie spełniony jest wyznaczony próg podobieństwa, piksel klasyfikowany jest jako należący do obiektu pierwszoplanowego. W ten sposób nawet obiekty zatrzymane pozostają 'widoczne' w dalszej detekcji.
 \paragraph{}
 Po fazie inicjalizacyjnej następuje właściwa detekcja. Każdy z pikseli wejściowych ramki zmapowany zostaje w ten sam sposób, jak podczas sekwencji testowej. Następnie sprawdzane są wartości spod adresów uformowanych przez wszystkie nowo uzyskane krotki i liczona jest ilość wystąpień liczby '1'. Uzyskana liczba to \textit{odpowiedź dyskryminatora} $r$. Całkowite dopasowanie piksela do modelu tła następuje wtedy, gdy odpowiedź jest równa ilości etykiet użytych w mapowaniu $m$. Ponieważ jednak taki przypadek zdarza się rzadko, zwłaszcza jeśli brane jest pod uwagę otoczenie z dynamicznym tłem, w praktyce stosowany jest odpowiedni próg podobieństwa, będący niejako granicą stopnia dopasowania piksela do historii tła. Stosunek $m/r$ wyznacza procent podobieństwa - jeśli jest mniejszy niż przyjęta wartość graniczna, piksel traktowany jest jako pierwszoplanowy.
 \subsection{Uaktualnianie modelu tła i obsługa nagłych zmian na scenie}
@@ -253,10 +267,4 @@ T(x) = \left\{
 \right.
 \end{equation}
 Wartość $T(x)$ może zostać zmieniona ''ręcznie'' - dzieje się tak w przypadku gdy piksel klasyfikowany jest jako należący do pierwszego planu przez wystarczająco długi czas. Mechanizm ten ma na celu ograniczenie propagacji ''duchów'' w detekcji.
-\section{Spectral-360}
-\cite{6910013}\\
-\begin{LARGE}
-\textcolor{red}{OPIS METODY}
-\end{LARGE}
-
 
