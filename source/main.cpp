@@ -9,7 +9,7 @@ using namespace cv;
 using namespace std;
 
 
-#define BUFFER_SIZE 20
+#define BUFFER_SIZE 1900
 
 int countDir(const char* path);
 static void drawOptFlowMap(const Mat& flow, Mat& cflowmap, int step,
@@ -19,7 +19,10 @@ void calculateVariance(vector<Mat> in[3], vector<Mat> average, Mat tensor);
 
 static void onMouse( int event, int x, int y, int /*flags*/, void* /*param*/ );
 
+void calculateAddress(Vec3b ptr, ushort map[192][3], ushort address[36]);
+
 int FTSG(string path);
+int CwisarDH(string path);
 
 Mat window;
 
@@ -30,7 +33,8 @@ int main( int argc, const char** argv )
     path = absPath + "/samples/dynamicBackground/dynamicBackground/";
     const string sampleNames[6] = {"boats","canoe","fall","fountain01","fountain02","overpass"};
     path = path + sampleNames[0] + "/input/";
-    FTSG(path);
+//    FTSG(path);
+    CwisarDH(path);
     return 0;
 }
 
@@ -111,11 +115,23 @@ void calculateVariance(vector<Mat> in[3], vector<Mat> average, Mat tensor) {
     }
 }
 
-static void onMouse( int event, int x, int y, int /*flags*/, void* /*param*/ )
-{
-    if( event == CV_EVENT_LBUTTONDOWN )
-    {
-        cout << window.at<Point2f>(y, x) << endl;
+void calculateAddress(Vec3b ptr, ushort map[192][3], ushort address[36]) {
+    ushort label;
+    for (int i = 0; i < 36; i++) {
+        address[i] = 0;
+    }
+    for (int k = 0; k < 3; k++) { //pixel retina construct
+        int val = (int) ptr[k];
+        val = (val <192 ? val : 192);
+        for (int l = 0; l < val; l++) { //for ones on the retina...
+            label = map[l][k]; //calculating addresses for each label
+            address[label] <<= 1;
+            address[label] |= (ushort)1;
+        }
+        for (int l = val; l < 192; l++) { //for zeros on the retina increase counter
+            label = map[l][k];
+            address[label] <<= 1;
+        }
     }
 }
 
@@ -194,15 +210,15 @@ int FTSG(string path) {
         mog.getBackgroundImage(bg);
         bgDiff = abs(frame - bg);
         cvtColor(bgDiff, fgMask, COLOR_BGR2GRAY);
-        threshold(fgMask, fgMaskBin, 15, 1, THRESH_BINARY);
+        threshold(fgMask, fgMaskBin, 10, 1, THRESH_BINARY);
         amb.convertTo(amb, fgMaskBin.type());
         bitwise_and(fgMaskBin, amb, fgMaskBin); //static foreground mask
         fgMaskBin.convertTo(fgMaskBin, moving.type());
         bitwise_or(moving, fgMaskBin, output);
         imshow("oryg", frame);
         imshow("Flux Tensor", tensorBin);
-        imshow("Split Gaussian", bgMaskBin);
-        imshow("output", output);
+        imshow("Split Gaussian", fgMask);
+        imshow("output", fgMaskBin);
         waitKey(1);
         swap(frame, nextFrame);
     }
@@ -211,4 +227,126 @@ int FTSG(string path) {
     destroyWindow("Split Gaussian"); //destroy the window with the name, "Split Gaussian"
     destroyWindow("output");
 
+}
+int CwisarDH(string path) {
+    int sampleCount = countDir(path.c_str()) - 2;
+    char filename[12];
+    Mat frame;
+    sprintf(filename, "in%06d.jpg", 1);
+    frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
+    int width = frame.cols, height = frame.rows, size = pow(2,12);
+    Mat out(height, width, CV_8UC1);
+    vector<Vec3b>** histBuff;
+    ushort ***discr;
+    discr = new ushort**[height];
+    histBuff = new vector<Vec3b>*[height];
+    for (int i = 0; i < height; i++) {
+        discr[i] = new ushort*[width];
+        histBuff[i] = new vector<Vec3b>[width];
+        for (int j = 0; j < width; j++) {
+            discr[i][j] = new ushort[size];
+            for (int k = 0; k < size; k++) {
+                discr[i][j][k] = 0;
+            }
+        }
+    }
+    vector<ushort> values;
+    for (int i = 0; i < 36; i++) {
+        for (int j = 0; j < 16; j++) {
+            values.push_back(i);
+        }
+    }
+    ushort map[192][3];
+    int range = values.size();
+    for (int i = 0; i < 192; i++) {
+        for (int j = 0; j < 3; j++) {
+            int index = rand() % range;
+            map[i][j] = values[index];
+            values.erase(values.begin() + index);
+            range--;
+        }
+    }
+
+    for (int i = 1800; i < BUFFER_SIZE; i++) { // initialization
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Vec3b ptr = frame.at<Vec3b>(y,x);
+                ushort address[36];
+                calculateAddress(ptr, map, address);
+                ushort ind, pos;
+                for (int k = 0; k < 36; k++) { //discriminator per-pixel learning
+                    ind = address[k] >> 4;
+                    pos = address[k] % 16;
+                    discr[y][x][ind] |= (ushort)1 << pos;
+                }
+            }
+        }
+        sprintf(filename, "in%06d.jpg", i+1);
+        frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
+        cout << endl << i << endl;
+    }
+    namedWindow("input", CV_WINDOW_AUTOSIZE);
+    namedWindow("output", CV_WINDOW_AUTOSIZE);
+    for (int i = BUFFER_SIZE; i < sampleCount; i++) {
+        out = Mat::zeros(height, width, CV_8UC1);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                Vec3b ptr = frame.at<Vec3b>(y,x);
+                ushort address[36];
+                calculateAddress(ptr, map, address);
+                ushort ind, pos;
+                ushort similCount = 0;
+                for (int k = 0; k < 36; k++) { //discriminator per-pixel learning
+                    ind = address[k] >> 4;
+                    pos = address[k] % 16;
+                    if(discr[y][x][ind] & ((ushort)1 << pos) == (ushort)1 << pos) {
+                        similCount++;
+                    }
+                }
+                if (similCount < 20) {
+                    out.at<uchar>(y,x) = 255;
+                    histBuff[y][x].push_back(ptr);
+                    if (histBuff[y][x].size() > 10) { //history buffer learning
+                        for (int i = 0; i <= 10; i++) {
+                            Vec3b ptr = histBuff[y][x][i];
+                            calculateAddress(ptr, map, address);
+                            ushort ind, pos;
+                            for (int k = 0; k < 36; k++) { //discriminator per-pixel learning
+                                ind = address[k] >> 4;
+                                pos = address[k] % 16;
+                                discr[y][x][ind] |= (ushort)1 << pos;
+                            }
+                        }
+                        histBuff[y][x].empty();
+                    }
+                }
+                else {
+                    for (int k = 0; k < 36; k++) { //discriminator per-pixel learning
+                        ind = address[k] >> 4;
+                        pos = address[k] % 16;
+                        discr[y][x][ind] |= (ushort)1 << pos;
+                    }
+                    histBuff[y][x].empty();
+                }
+            }
+        }
+        imshow("input", frame);
+        imshow("output", out);
+        waitKey(1);
+        sprintf(filename, "in%06d.jpg", i+1);
+        frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
+    }
+    destroyWindow("input");
+    destroyWindow("output");
+
+
+ // ZWALNIANIE PAMIĘCI - NIE TYKAC!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            delete [] discr[i][j];
+        }
+        delete [] discr[i];
+    }
+    delete [] discr;
+    return 0;
 }
