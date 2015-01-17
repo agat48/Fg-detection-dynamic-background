@@ -17,12 +17,14 @@ Metoda ta dzieli się na trzy główne moduły:
 \end{itemize}
 \subsection{Flux Tensor}
 \label{sec:FT}
-Tensor przepływu pozwala na wykrycie zmian przemieszczenia obiektów sceny pomiędzy kolejnymi ramkami nagrania. Może on być definiowany jako wariancja czasowa przepływu optycznego w lokalnej przestrzeni 3D. Wykorzystanie tej metody umożliwia pominięcie kosztownego rozkładu macierzy na wartości i wektory własne przy uzyskiwaniu informacji o ruchu na scenie.\\
-Najbardziej istotne dla tej metody są następujące cechy:
+Tensor przepływu pozwala na zbadanie zachowania obiektów sceny pomiędzy kolejnymi ramkami nagrania. Z jego pomocą badana jest dynamika każdego piksela obrazu. Może on być definiowany jako wariancja czasowa przepływu optycznego w lokalnej przestrzeni 3D. Najbardziej istotne dla tej metody są następujące cechy:
 \begin{itemize}
 \item niewrażliwość na cienie
 \item nikła czułość na zmiany oświetlenia na scenie.
 \end{itemize} 
+\paragraph{}
+\textbf{Przepływ optyczny} (ang. \textit{optical flow}) pozwala badać zmianę położenia poszczególnych pikseli pomiędzy ramkami nagrania. Dla dwuwymiarowej przestrzeni prezentowany jest on w postaci wektorów przemieszczenia, których współrzędne zapisywane są w dwukanałowej macierzy. Ponieważ zagadnienie obliczania przepływu nie należy do trywialnych, przy wyborze odpowiedniej metody istotne jest uwzględnienie typu danych wejściowych - rozwiązania zaproponowane dla obrazów barwnych często różnią się znacząco od tych dla macierzy jednokanałowych. W bibliotece OpenCV dostępnych jest kilka funkcji służących do obliczania przepływu optycznego. Choć testowane nagrania zawierają informację o kolorze, dla potrzeb szybszego przetwarzania przeprowadzono operacje dla każdego z kanałów osobno - algorytmy obliczania przepływu optycznego dla obrazów wielokanałowych działają kilkakrotnie wolniej, co zdecydowanie pogarsza wydajność algorytmu. Zastosowana została metoda \textit{calcOpticalFlowFarneback()}, bazująca na algorytmie Gunnara Farnebacka. 
+\paragraph{}
 W postaci macierzy równanie tensora przedstawia się następująco:
 \begin{equation}
 \label{eq:FT}
@@ -58,17 +60,23 @@ Z tego też powodu ślad tensora przepływu, zapisany jako:
 tr(J_{F}) = 
 \int_\Omega ||\frac{\partial}{\partial t}\nabla I||^2\mathrm{d}y
 \end{equation}
-może zostać bezpośrednio wykorzystany do klasyfikacji pikseli jako należących do obiektu poruszającego się bądź statycznego z pominięciem kosztownej dekompozycji macierzy.
+, gdzie $\nabla I$ - gradient obrazu, może zostać bezpośrednio wykorzystany do klasyfikacji pikseli jako należących do obiektu poruszającego się bądź statycznego z pominięciem kosztownej dekompozycji macierzy.
+\paragraph{}
+W implementacji rozwiązania postanowiono wykorzystać opisane wyżej własności i przedstawić tensor przepływu w postaci macierzy wariancji czasowych wartości przepływu optycznego dla każdego piksela. Obliczanie poszczególnych wartości w ramce $t$ odbywa się zgodnie ze wzorem:
+\begin{equation}
+FT_{t}(x) = \frac{1}{N}\sum_{i=1}^{N} (OF_{i}(x)-\mu_{t}(x))^2
+\end{equation}
+, gdzie $OF_{n}(x)$ - $n$-ta próbka przepływu optycznego wyliczonego dla piksela $x$, $\mu_{t}(x)$ - wartość średnia przepływu. $N$ próbek przepływu przechowywanych jest w buforze, są one uaktualniane dla każdej nowej ramki.
 \subsection{Split Gaussian Models}
 \label{sec:SG}
-Jak wspomniana, modele tła oparte na gaussowskim rozkładzie prawdopodobieństwa są szeroko stosowane w tematyce detekcji ruchu. Również i w metodzie opisywanej w tej sekcji postanowiono skorzystać z podobnego podejścia. Różnica polega jednak na tym, iż zamiast tworzyć jeden multimodalny model łączący tło i pierwszy plan, postanowiono odseparować je, stosując także zmienną ilość gaussianów inkorporowanych do modelu.\\
+Jak wspomniano, modele tła oparte na gaussowskim rozkładzie prawdopodobieństwa są szeroko stosowane w tematyce ekstrakcji obiektów pierwszoplanowych. Również i w metodzie opisywanej w tej sekcji postanowiono skorzystać z podobnego podejścia. Różnica polega jednak na tym, iż zamiast tworzyć jeden multimodalny model łączący tło i pierwszy plan, postanowiono odseparować je, stosując także zmienną liczbę rozkładów inkorporowanych do modelu.\\
 Każdy nowy piksel porównywany jest z K poprzednimi dystrybucjami, gdzie K to parametr dostosowujący się w zależności od warunków. Zgodność z modelem tła ustalana jest na podstawie wzoru:
 \begin{equation}
 D_{min}(x,y) = \min_{i\in K}\max_{j\in C}((I_{t}(x,y)-\mu_{i,j})^2-T_{b}\cdot\sigma^2)
 \end{equation}
-Piksel przypisany zostaje do modelu tła jeśli pasuje do któregokolwiek z gaussianów. $T_{b}$ to ustalony próg, oznaczający liczbę odchyleń standardowych, $\sigma = \sum_{i}^{k}\omega_{i}\sigma_{i}$. Oznacza to, że każdemu pikselowi odpowiadać będzie $K\times C$ modeli Gaussa, gdzie $C$ oznacza ilość kanałów - dla modelu RGB $C = 3$. Uproszczeniem jest stosowanie takiej samej wagi $\omega$ i wariancji $\sigma$ dla wszystkich kanałów.
+Piksel przypisany zostaje do modelu tła jeśli pasuje do któregokolwiek z gaussianów. $T_{b}$ to ustalony próg, oznaczający liczbę odchyleń standardowych, $\sigma = \sum_{i}^{k}\omega_{i}\sigma_{i}$. Oznacza to, że każdemu pikselowi odpowiadać będzie $K\times C$ modeli Gaussa, gdzie $C$ oznacza liczbę kanałów - dla modelu RGB $C = 3$. Uproszczeniem jest stosowanie takiej samej wagi $\omega$ i wariancji $\sigma$ dla wszystkich kanałów.
 \paragraph{}
-Do modelowania pierwszego planu używany jest pojedynczy model gaussowski. Służy on do rozróżniania obiektów zatrzymanych i niejednoznacznych detekcji, następujących na przykład w obecności szumów. Te drugie występują w obszarach, które zostały zaklasyfikowane jako tło przez FT, natomiast SG wykrył je jako pierwszy plan. Przyporządkowywane są do modelu pierwszego planu tylko jeśli różnica między nimi a ich średnimi wartościami jest mniejsza od pewnego ustalonego progu.
+Do modelowania pierwszego planu używany jest pojedynczy model gaussowski. Służy on do rozróżniania obiektów zatrzymanych i niejednoznacznych detekcji, będących skutkiem szumu. Te drugie występują w obszarach, które zostały zaklasyfikowane jako tło przez FT, natomiast SG wykrył je jako pierwszy plan. Przyporządkowywane są do modelu pierwszego planu tylko jeśli różnica między nimi a ich średnimi wartościami jest mniejsza od pewnego ustalonego progu.
 \paragraph{}
 Modele tła i pierwszego planu uaktualniane są na bieżąco, aby jak najbardziej ograniczyć ilość fałszywych detekcji spowodowanych zmianami oświetlenia bądź drobnym ruchem sceny. Stosowana jest tu metoda konserwatywna. Do tego procesu stosowane są następujące wzory:
 \begin{gather}
