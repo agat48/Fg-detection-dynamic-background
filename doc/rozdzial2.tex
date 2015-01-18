@@ -1,24 +1,33 @@
 \chapter{Wprowadzenie do tematyki pracy}
 \label{cha:tematykaPracy}
-Cyfrowa akwizycja obrazu pozwala na odwzorowanie widzialnej dla człowieka sceny w przestrzeni zdigitalizowanej. Takie przedstawienie obrazu umożliwia utrwalenie go na rozmaitych nośnikach pamięci i dostęp do niego w dowolnym momencie w przyszłości. Rejestrując zdjęcia z pewną częstotliwością i zachowaniem kolejności ich akwizycji otrzymuje się nagranie wideo. Pozwala ono śledzić zmiany na scenie następujące w czasie, takie jak ruch czy \textcolor{red}{zmiana} oświetlenia. Następujące po sobie obrazy zwane \textbf{ramkami} to \textbf{sekwencja wideo}.
+Cyfrowa akwizycja obrazu pozwala na odwzorowanie widzialnej dla człowieka sceny w przestrzeni zdigitalizowanej. Takie przedstawienie obrazu umożliwia utrwalenie go na rozmaitych nośnikach pamięci i dostęp do niego w dowolnym momencie w przyszłości. Rejestrując zdjęcia z pewną częstotliwością i zachowaniem kolejności ich akwizycji otrzymuje się nagranie wideo. Pozwala ono śledzić zmiany na scenie następujące w czasie, takie jak ruch czy różnice w oświetleniu. Następujące po sobie obrazy zwane \textbf{ramkami} to \textbf{sekwencja wideo}.
 
 \section{Analiza obrazu}  
-%\subsection{Binaryzacja}
-%Jest to jedna z podstawowych metod punktowego przetwarzania obrazu.  Pozwala odseparować istotne informacje na zdjęciu z pominięciem zależności mniej interesujących, takich jak na przykład konkretny poziom jasności, utrudniających tylko dalsze przetwarzanie ze względu na większą złożoność obliczeń. Obraz zostaje sprowadzony do postaci binarnej (zero-jedynkowej), gdzie najczęściej (w zależności od podejścia) 0 reprezentuje tło, 1 - interesujący obszar obrazu.  
-%\paragraph{}
-%Istnieje wiele metod binaryzacji, dlatego też można wybrać odpowiednią dla każdego algorytmu. Podstawowym problemem staje się jednak wyznaczenie odpowiedniego progu binaryzacji - ze względu na następującą w procesie radykalną redukcję informacji zawartych w obrazie, źle dobrany graniczny poziom jasności może doprowadzić do błędnej detekcji, w konsekwencji skutkującej złym działaniem programu. Dlatego też bardzo ważna jest znajomość rodzaju danych, z jakimi system przetwarzający będzie miał do czynienia - pozwoli to zastosować odpowiednią dla nich metodę obliczenia progu.
 \subsection{Segmentacja obiektów}
-Celem każdej segmentacji jest otrzymanie binarnej, czarno-białej reprezentacji, na której wyekstrahowane zostały interesujące fragmenty obrazu wejściowego - na przykład obiekty w ruchu bądź na pierwszym planie. Najczęściej segmentacja służy do przygotowania informacji zawartych na zdjęciu do dalszej analizy - jak choćby pomiarów czy śledzeniu obiektów w przypadku sekwencji wideo. Istnieje wiele metod segmentacji, od binaryzacji z wykorzystaniem arbitralnie dobranego progu dla całego obrazu, poprzez rozrost, zalewanie obszaru i wiele innych. Bardzo ważnym jest dobór odpowiedniego sposobu w zależności od danych, z jakimi algorytm będzie miał do czynienia. Zły dobór metody może prowadzić do błędnych, a często nawet i bezużytecznych wyników - binaryzacja z globalnym progiem przy nierównomiernym oświetleniu często nie potrafi sobie poradzić z wyekstrahowaniem tekstu pisanego.
+Celem każdej segmentacji jest otrzymanie binarnej, czarno-białej reprezentacji, na której wyekstrahowane zostały interesujące fragmenty obrazu wejściowego - na przykład obiekty w ruchu bądź na pierwszym planie. Przykładowy wynik takiej operacji zamieszczony jest na rys. \ref{fig:segGt}. Najczęściej segmentacja służy do przygotowania informacji zawartych na zdjęciu do dalszej analizy - jak choćby w celu dokonania pomiarów czy śledzeniu obiektów w przypadku sekwencji wideo. Istnieje wiele metod segmentacji, od binaryzacji z wykorzystaniem arbitralnie dobranego progu dla całego obrazu, poprzez rozrost, zalewanie obszaru i wiele innych. Bardzo ważnym jest dobór odpowiedniego sposobu w zależności od danych, z jakimi algorytm będzie miał do czynienia. Zły dobór metody może prowadzić do błędnych, a często nawet i bezużytecznych wyników - binaryzacja z globalnym progiem przy nierównomiernym oświetleniu często nie potrafi sobie poradzić z wyekstrahowaniem tekstu pisanego.
+
 \begin{figure}[!htb]
 \centering
-
-\includegraphics[width=0.4\textwidth]{img/sample}
-\includegraphics[width=0.4\textwidth]{img/sample}
-\caption{Przykładowa segmentacja. Po lewej - ramka z nagrania, po prawej wynik segmentacji}
+\begin{subfigure}[b]{0.3\textwidth}
+\includegraphics[width=\textwidth]{img/segIn}
+\caption{\label{fig:segIn}}
+\end{subfigure}
+\quad
+\begin{subfigure}[b]{0.3\textwidth}
+\includegraphics[width=\textwidth]{img/segGt}
+\caption{\label{fig:segGt}}
+\end{subfigure}
+\quad
+\begin{subfigure}[b]{0.3\textwidth}
+\includegraphics[width=\textwidth]{img/segBad}
+\caption{\label{fig:segBad}}
+\end{subfigure}
+\caption{Przykładowa segmentacja. (a) - ramka wejściowa, (b) - poprawna segmentacja, (c) - błędna segmentacja. \label{fig:segmentacja}}
 \end{figure}
 
 \paragraph{}
-Segmentacja obiektów pierwszoplanowych staje się szczególnie trudnym zagadnieniem w przypadku detekcji ruchu na scenie. Nie można bowiem ograniczyć się wyłącznie do algorytmów badających przemieszczenie elementów sceny, ponieważ w przypadku zatrzymania obiektów byłyby one błędnie klasyfikowane jako tło. 
+Segmentacja obiektów pierwszoplanowych staje się szczególnie trudnym zagadnieniem w przypadku detekcji ruchu na nagraniu. Nie można bowiem ograniczyć się wyłącznie do algorytmów badających przemieszczenie elementów sceny, ponieważ w przypadku ich zatrzymania byłyby one błędnie klasyfikowane jako tło. Problematyczne staje się także odseparowywanie informacji uzyskanej z ruchomych fragmentów tła, jak choćby płynącej wody. Przykład niepoprawnej segmentacji w takich warunkach znajduje się na rys. \ref{fig:segBad}.
+
 \section{Detekcja obiektów pierwszoplanowych}
 Implementacja segmentacji w sposób zbliżony do tego, w jaki odbywa się to u człowieka, jest niezwykle trudna i wymaga dużych nakładów obliczeniowych i pamięciowych - bardzo rozbudowany system nie byłby w stanie przeprowadzać detekcji w czasie rzeczywistym. Zamiast więc przewidywać, jakie obiekty mogą pojawić się na scenie i wykorzystywać mechanizm uczenia maszynowego, twórcy większości metod poszukują innych rozwiązań.
 \paragraph{}
@@ -30,24 +39,28 @@ Ze względu na trudność problemu detekcji, opracowanych zostało wiele metod o
 \end{itemize}
 Związane jest to z faktem, iż bardzo rzadko na sekwencjach wideo rejestrowane są sytuacje idealne - często scenie towarzyszą zmiany oświetlenia (zwłaszcza w długotrwałym monitoringu na zewnątrz) lub szumy/zakłócenia, czego rezultatem jest, iż pomimo braku ruchu obiektów poszczególne piksele zmieniają swoją wartość - co przy standardowym podejściu polegającym na porównaniu wartości pikseli odpowiadających sobie pomiędzy ramkami skutkuje fałszywą detekcją. Rzadko również do dyspozycji są sekwencje z ''czystym'' obrazem tła - na próbkowanych ramkach znajdują obiekty już w ruchu, albo statyczne, jednak mogące w każdej chwili zmienić swoje położenie - jak choćby zaparkowane samochody. Zasłaniają one tło, przez co wygenerowanie prawidłowego modelu staje się bardzo trudne, a niekiedy niemożliwe. Opisane w dalszej części rozwiązania stworzone zostały z uwzględnieniem niniejszych ograniczeń.
 \subsection{Modelowanie tła}
-Jednym z najczęściej używanych w segmentacji obiektów pierwszoplanowych rozwiązań pośrednich jest modelowanie tła. Polega ono na stworzeniu modelu referencyjnego ''czystej'' sceny, czyli takiej, na której nie ma żadnych obiektów, co pozwala na późniejsze porównanie z nim kolejnych ramek nagrania w celu wykrycia zmian. Najczęściej odbywa się to poprzez algorytmy odejmowania tła - obliczany jest moduł z różnicy pomiędzy modelem tła a aktualnie analizowanym obrazem sceny, co skutkuje otrzymaniem obrazu, na którym niezerowe wartości są interpretowane jako obiekty pierwszoplanowe.
+Jednym z najczęściej używanych w segmentacji obiektów pierwszoplanowych rozwiązań pośrednich jest modelowanie tła. Polega ono na stworzeniu modelu referencyjnego ''czystej'' sceny, czyli takiej, na której nie ma żadnych obiektów, co pozwala na późniejsze porównanie z nim kolejnych ramek nagrania w celu wykrycia zmian (por. rys. \ref{fig:bgModel}). Najczęściej odbywa się to poprzez algorytmy odejmowania tła - obliczany jest moduł z różnicy pomiędzy modelem tła a aktualnie analizowanym obrazem sceny, co skutkuje otrzymaniem obrazu, na którym niezerowe wartości są interpretowane jako obiekty pierwszoplanowe.
 \paragraph{}
-W rzeczywistości jednak to zagadnienie okazuje się być o wiele bardziej skomplikowane. W nagraniach rejestrowanych przez kamery w monitoringu wizyjnym rzadko dostępny jest materiał, na którym widoczne jest samo tło. Usuwanie wszelkich obiektów ze sceny i tworzenie nowego modelu za każdym razem, kiedy tło zmieni się - na przykład zostanie wybudowany nowy budynek bądź nastąpi przemeblowanie wewnątrz pomieszczenia - jest bardzo uciążliwe. Twórcy oprogramowania zajmującego się automatyczną detekcją obiektów borykają się także z problemami, jakich nastręcza zjawisko ruchu obrotowego Ziemi - zmiennym oświetleniem sceny w zależności od pory dnia. Trzeba bowiem brać pod uwagę, iż na obrazie reprezentowana jest jasność poszczególnych pikseli - im mniej światła, tym ciemniejsze stają się obiekty. Można pomyśleć, iż ta kwestia rozwiązana zostać może poprzez zmianę przestrzeni kolorów i odseparowanie luminancji pikseli od ich barwy poprzez zastosowanie innej przestrzeni barw %(\ref{sec:colorSpace})
-, jednak i tu pojawiają się problemy - mniej światła oznacza dużo mniej dokładną akwizycję barwy piksela, a co za tym idzie mogą pojawiać się różnice odcieni w czasie. Występuje tu analogia do procesu widzenia człowieka - oko ludzkie potrafi rozpoznawać kształt i ruch nawet przy bardzo słabym oświetleniu, odbywa się to jednak kosztem postrzegania w kolorze. W półmroku człowiek rejestruje więc otoczenie w skali szarości.
+W rzeczywistości jednak to zagadnienie okazuje się być o wiele bardziej skomplikowane. W nagraniach rejestrowanych przez kamery w monitoringu wizyjnym rzadko dostępny jest materiał, na którym widoczne jest samo tło. Usuwanie wszelkich obiektów ze sceny i tworzenie nowego modelu za każdym razem, kiedy tło zmieni się - na przykład zostanie wybudowany nowy budynek bądź nastąpi przemeblowanie wewnątrz pomieszczenia - jest bardzo uciążliwe. Twórcy oprogramowania zajmującego się automatyczną detekcją obiektów borykają się także z problemami, jakich nastręcza zjawisko ruchu obrotowego Ziemi - zmiennym oświetleniem sceny w zależności od pory dnia. Trzeba bowiem brać pod uwagę, iż na obrazie reprezentowana jest jasność poszczególnych pikseli - im mniej światła, tym ciemniejsze stają się obiekty. Można pomyśleć, iż ta kwestia rozwiązana zostać może poprzez zmianę przestrzeni kolorów i odseparowanie luminancji pikseli od ich barwy poprzez zastosowanie innej przestrzeni barw, jednak i tu pojawiają się problemy - mniej światła oznacza dużo mniej dokładną akwizycję barwy piksela, a co za tym idzie mogą pojawiać się różnice odcieni w czasie. Występuje tu analogia do procesu widzenia człowieka - oko ludzkie potrafi rozpoznawać kształt i ruch nawet przy bardzo słabym oświetleniu, odbywa się to jednak kosztem postrzegania w kolorze. W półmroku człowiek rejestruje więc otoczenie w skali szarości.
 \paragraph{}
-Z tych i wielu innych powodów zagadnienie modelowania tła staje się kluczowym w przypadku wielu algorytmów. Dobry obraz referencyjny pozwala bowiem na ograniczenie detekcji do zwykłego porównywania wartości poszczególnych pikseli. Najczęściej proces modelowania odbywa się na podstawie początkowej sekwencji testowej, a następnie wzorzec tła jest uaktualniany poprzez odpowiednie modyfikacje przez cały czas działania programu dokonującego detekcji. Stosowanych jest wiele podejść, wykorzystujących zarówno proste mechanizmy, jak średnia wartość piksela na obrazie, jak i nieco bardziej zaawansowane, oparte na statystyce i probabilistyce. Warto wspomnieć tu o modelach gaussowskich, pojawiających się w większości proponowanych obecnie rozwiązań. Zasada ich działania opisana zostanie w dalszej części pracy.
+Z tych i wielu innych powodów zagadnienie modelowania tła staje się kluczowym w przypadku wielu algorytmów. Dobry obraz referencyjny pozwala bowiem na ograniczenie detekcji do zwykłego porównywania wartości poszczególnych pikseli. Najczęściej proces modelowania odbywa się na podstawie początkowej sekwencji testowej, a następnie wzorzec tła jest uaktualniany poprzez odpowiednie modyfikacje przez cały czas działania programu dokonującego segmentacji. Stosowanych jest wiele podejść, wykorzystujących zarówno proste mechanizmy, jak średnia wartość piksela na obrazie, jak i nieco bardziej zaawansowane, oparte na statystyce i probabilistyce. Warto wspomnieć tu o modelach gaussowskich, pojawiających się w większości proponowanych obecnie rozwiązań. Zasada ich działania opisana zostanie w dalszej części pracy.
 \paragraph{}
-Standardowe podejścia w dziedzinie generacji tła, jak średnia jasność bądź model Gaussa na podstawie pojedynczej ramki, nie dają jednak spodziewanych rezultatów w przypadkach obecności drobnego ruchu na scenie. Obiekty tła pozostające w ciągłym \textcolor{red}{ruchu} mogą bowiem przyjmować diametralnie skrajne wartości jasności. Posiadanie więc jednego modelu tła okazuje się nie być wystarczające. Te same algorytmy dla różnych zestawów nagrań wykazują się odmienną skutecznością, co jest zjawiskiem niepożądanym - dobry system detekcji powinien pracować prawidłowo niezależnie od panujących warunków.
+Standardowe podejścia w dziedzinie generacji tła, jak średnia jasność bądź model Gaussa na podstawie pojedynczej ramki, nie dają jednak spodziewanych rezultatów w przypadkach obecności drobnych zmian na scenie. Obiekty tła pozostające w ciągłym ruchu mogą bowiem przyjmować diametralnie skrajne wartości jasności. Posiadanie więc jednego modelu tła okazuje się nie być wystarczające. Te same algorytmy dla różnych zestawów nagrań wykazują się odmienną skutecznością, co jest zjawiskiem niepożądanym - dobry system detekcji powinien pracować prawidłowo niezależnie od panujących warunków.
 \begin{figure}[!htb]
 \centering
-
-\includegraphics[width=0.4\textwidth]{img/sample}
-\includegraphics[width=0.4\textwidth]{img/sample}
-\caption{Modelowanie tła. Po lewej - ramka z nagrania, po prawej wyidealizowany model tła}
-%\floatfoot{Source: }
+\begin{subfigure}[b]{0.4\textwidth}
+\includegraphics[width=\textwidth]{img/fg}
+\caption{}
+\end{subfigure}
+\quad
+\begin{subfigure}[b]{0.4\textwidth}
+\includegraphics[width=\textwidth]{img/bg}
+\caption{}
+\end{subfigure}
+\caption{Modelowanie tła. Po lewej ramka z nagrania, po prawej model tła \label{fig:bgModel}}
 \end{figure}
 \subsection{Metody uaktualniania modelu tła}
-Aby utrzymać prawidłową pracę systemu detekcji w zmiennych warunkach, należy dokonywać uaktualniania modelu tła na bieżąco. Polega to na podmianie wartości niektórych pikseli modelu bardziej \textcolor{red}{aktualnymi}. Ze względu na politykę stosowaną w tym procesie wyróżniane są dwie metody:
+Aby utrzymać prawidłową pracę systemu detekcji w zmiennych warunkach, należy dokonywać uaktualniania modelu tła na bieżąco. Polega to na podmianie wartości niektórych pikseli modelu. Ze względu na politykę stosowaną w tym procesie wyróżniane są dwie metody:
 \begin{itemize}
 \item konserwatywna
 \item ślepa

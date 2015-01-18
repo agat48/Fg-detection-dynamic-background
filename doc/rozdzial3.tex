@@ -23,8 +23,6 @@ Tensor przepływu pozwala na zbadanie zachowania obiektów sceny pomiędzy kolej
 \item nikła czułość na zmiany oświetlenia na scenie.
 \end{itemize} 
 \paragraph{}
-\textbf{Przepływ optyczny} (ang. \textit{optical flow}) pozwala badać zmianę położenia poszczególnych pikseli pomiędzy ramkami nagrania. Dla dwuwymiarowej przestrzeni prezentowany jest on w postaci wektorów przemieszczenia, których współrzędne zapisywane są w dwukanałowej macierzy. Ponieważ zagadnienie obliczania przepływu nie należy do trywialnych, przy wyborze odpowiedniej metody istotne jest uwzględnienie typu danych wejściowych - rozwiązania zaproponowane dla obrazów barwnych często różnią się znacząco od tych dla macierzy jednokanałowych. W bibliotece OpenCV dostępnych jest kilka funkcji służących do obliczania przepływu optycznego. Choć testowane nagrania zawierają informację o kolorze, dla potrzeb szybszego przetwarzania przeprowadzono operacje dla każdego z kanałów osobno - algorytmy obliczania przepływu optycznego dla obrazów wielokanałowych działają kilkakrotnie wolniej, co zdecydowanie pogarsza wydajność algorytmu. Zastosowana została metoda \textit{calcOpticalFlowFarneback()}, bazująca na algorytmie Gunnara Farnebacka. 
-\paragraph{}
 W postaci macierzy równanie tensora przedstawia się następująco:
 \begin{equation}
 \label{eq:FT}
@@ -54,19 +52,36 @@ J_{F} =
 \int_\Omega \left\{\frac{\partial^2I}{\partial t^2}\right\}^2 \mathrm{d}y
 \end{bmatrix}
 \end{equation}
-Uzyskane w ten sposób elementy macierzy tensora zawierają informacje na temat czasowych zmian gradientu (pola wektorowego, wskazującego kierunki najszybszych wzrostów wartości pola skalarnego, w tym wypadku - obrazu) na scenie. Pozwala to na prostą klasyfikację obiektów jako poruszające się bądź statyczne.\\
+Uzyskane w ten sposób elementy macierzy tensora zawierają informacje na temat czasowych zmian gradientu (pola wektorowego, wskazującego kierunki najszybszych wzrostów wartości pola skalarnego, w tym wypadku - obrazu) na scenie. Pozwala to na prostą klasyfikację obiektów jako poruszające się bądź statyczne - im większe zmiany, tym szybciej piksel zmienia swoje położenie.\\
 Z tego też powodu ślad tensora przepływu, zapisany jako:
 \begin{equation}
 tr(J_{F}) = 
 \int_\Omega ||\frac{\partial}{\partial t}\nabla I||^2\mathrm{d}y
 \end{equation}
-, gdzie $\nabla I$ - gradient obrazu, może zostać bezpośrednio wykorzystany do klasyfikacji pikseli jako należących do obiektu poruszającego się bądź statycznego z pominięciem kosztownej dekompozycji macierzy.
+, gdzie $\nabla I$ - gradient obrazu, może zostać bezpośrednio wykorzystany do klasyfikacji pikseli jako należących do obiektu poruszającego się bądź statycznego.
+\paragraph{}
+\textbf{Przepływ optyczny} (ang. \textit{optical flow}) pozwala badać zmianę położenia poszczególnych pikseli pomiędzy ramkami nagrania. Dla dwuwymiarowej przestrzeni prezentowany jest on w postaci wektorów przemieszczenia, których współrzędne x i y zapisywane są w dwóch osobnych macierzach. Ponieważ zagadnienie obliczania przepływu nie należy do trywialnych, przy wyborze odpowiedniej metody istotne jest uwzględnienie typu danych wejściowych - rozwiązania zaproponowane dla obrazów barwnych często różnią się znacząco od tych dla scen w skali szarości. W bibliotece OpenCV dostępnych jest kilka funkcji służących do obliczania przepływu optycznego. Choć testowane nagrania zawierają informację o kolorze, dla potrzeb szybszego przetwarzania przeprowadzono operacje dla każdego z kanałów osobno - algorytmy obliczania przepływu optycznego dla obrazów wielokanałowych działają kilkakrotnie wolniej, co zdecydowanie pogarsza wydajność algorytmu. Zastosowana została metoda \textit{calcOpticalFlowFarneback()}. 
 \paragraph{}
 W implementacji rozwiązania postanowiono wykorzystać opisane wyżej własności i przedstawić tensor przepływu w postaci macierzy wariancji czasowych wartości przepływu optycznego dla każdego piksela. Obliczanie poszczególnych wartości w ramce $t$ odbywa się zgodnie ze wzorem:
 \begin{equation}
-FT_{t}(x) = \frac{1}{N}\sum_{i=1}^{N} (OF_{i}(x)-\mu_{t}(x))^2
+F_{t}(x) = \frac{1}{N}\sum_{i=1}^{N} (O_{i}(x)-\mu_{t}(x))^2
 \end{equation}
-, gdzie $OF_{n}(x)$ - $n$-ta próbka przepływu optycznego wyliczonego dla piksela $x$, $\mu_{t}(x)$ - wartość średnia przepływu. $N$ próbek przepływu przechowywanych jest w buforze, są one uaktualniane dla każdej nowej ramki.
+, gdzie $O_{n}(x)$ - $n$-ta próbka przepływu optycznego wyliczonego dla piksela $x$, $\mu_{t}(x)$ - wartość średnia przepływu. $N$ próbek przepływu przechowywanych jest w buforze, są one uaktualniane dla każdej nowej ramki. Na rysunku \ref{fig:FT} przedstawiony jest przykładowy wynik detekcji uzyskany przy pomocy tej metody.
+
+\begin{figure}[!h]
+\centering
+\begin{subfigure}[b]{0.4\textwidth}
+\includegraphics[width=\textwidth]{img/fg}
+\caption{}
+\end{subfigure}
+\quad
+\begin{subfigure}[b]{0.4\textwidth}
+\includegraphics[width=\textwidth]{img/FT}
+\caption{}
+\end{subfigure}
+\caption{Wynik obliczenia tensora przepływu dla ramki numer 7137 z zestawu \textit{boats}. Po lewej - oryginalny obraz, po prawej - tensor.\label{fig:FT}}
+\end{figure}
+
 \subsection{Split Gaussian Models}
 \label{sec:SG}
 Jak wspomniano, modele tła oparte na gaussowskim rozkładzie prawdopodobieństwa są szeroko stosowane w tematyce ekstrakcji obiektów pierwszoplanowych. Również i w metodzie opisywanej w tej sekcji postanowiono skorzystać z podobnego podejścia. Różnica polega jednak na tym, iż zamiast tworzyć jeden multimodalny model łączący tło i pierwszy plan, postanowiono odseparować je, stosując także zmienną liczbę rozkładów inkorporowanych do modelu.\\
@@ -76,7 +91,7 @@ D_{min}(x,y) = \min_{i\in K}\max_{j\in C}((I_{t}(x,y)-\mu_{i,j})^2-T_{b}\cdot\si
 \end{equation}
 Piksel przypisany zostaje do modelu tła jeśli pasuje do któregokolwiek z gaussianów. $T_{b}$ to ustalony próg, oznaczający liczbę odchyleń standardowych, $\sigma = \sum_{i}^{k}\omega_{i}\sigma_{i}$. Oznacza to, że każdemu pikselowi odpowiadać będzie $K\times C$ modeli Gaussa, gdzie $C$ oznacza liczbę kanałów - dla modelu RGB $C = 3$. Uproszczeniem jest stosowanie takiej samej wagi $\omega$ i wariancji $\sigma$ dla wszystkich kanałów.
 \paragraph{}
-Do modelowania pierwszego planu używany jest pojedynczy model gaussowski. Służy on do rozróżniania obiektów zatrzymanych i niejednoznacznych detekcji, będących skutkiem szumu. Te drugie występują w obszarach, które zostały zaklasyfikowane jako tło przez FT, natomiast SG wykrył je jako pierwszy plan. Przyporządkowywane są do modelu pierwszego planu tylko jeśli różnica między nimi a ich średnimi wartościami jest mniejsza od pewnego ustalonego progu.
+Do reprezentacji pierwszego planu używany jest pojedynczy model. Służy on do rozróżniania obiektów zatrzymanych i niejednoznacznych detekcji, będących skutkiem szumu. Te drugie występują w obszarach, które zostały zaklasyfikowane jako tło przez FT, natomiast SG wykrył je jako pierwszy plan. Przyporządkowywane są do modelu pierwszego planu tylko jeśli różnica między nimi a ich średnimi wartościami jest mniejsza od pewnego ustalonego progu.
 \paragraph{}
 Modele tła i pierwszego planu uaktualniane są na bieżąco, aby jak najbardziej ograniczyć ilość fałszywych detekcji spowodowanych zmianami oświetlenia bądź drobnym ruchem sceny. Stosowana jest tu metoda konserwatywna. Do tego procesu stosowane są następujące wzory:
 \begin{gather}
@@ -85,7 +100,22 @@ Modele tła i pierwszego planu uaktualniane są na bieżąco, aby jak najbardzie
 \omega_{i,t} = (1-\alpha)\omega_{i,t-1}+\alpha M \\
 M = (1-F_{B})\cup(F_{amb}-F_{S})
 \end{gather}
-$M$ to maska aktualizacji, $\alpha$ - parametr uczenia się algorytmu, $F_{B}, F_{amb}, F_{S}$ to odpowiednio model pierwszego planu uzyskany za pomocą SG, wykryte rejony niejednoznaczne oraz model statycznych elementów sceny. Model pierwszego planu uaktualniany jest na podstawie negatywu maski dla tła.
+$M$ to maska aktualizacji, $\alpha$ - parametr uczenia się algorytmu, $F_{B}, F_{amb}, F_{S}$ to odpowiednio model pierwszego planu uzyskany za pomocą SG, wykryte rejony niejednoznaczne oraz model statycznych elementów sceny. Model pierwszego planu uaktualniany jest na podstawie negatywu maski dla tła. Wyniki detekcji przedstawiono na rysunku \ref{fig:SG}.
+
+\begin{figure}[!h]
+\centering
+\begin{subfigure}[b]{0.4\textwidth}
+\includegraphics[width=\textwidth]{img/fg}
+\caption{}
+\end{subfigure}
+\quad
+\begin{subfigure}[b]{0.4\textwidth}
+\includegraphics[width=\textwidth]{img/SG}
+\caption{}
+\end{subfigure}
+\caption{Wynik segmentacji dla ramki numer 7137 z zestawu \textit{boats}. Po lewej - oryginalny obraz, po prawej - efekt użycia metody SG.\label{fig:SG}}
+\end{figure}
+
 \subsection{Fuzja wyników}
 \label{sec:fuzja}
 Wyniki otrzymywane za pomocą metod \ref{sec:FT} i \ref{sec:SG} uzyskiwane są niezależnie od siebie. W skutek działania algorytmów tworzone są więc dwa modele - jeden, za pomocą tensora przepływu, reprezentujący wyłącznie ruch na scenie, drugi, dzięki SG, pozwalający na wykrycie także obiektów statycznych. Ponieważ jednak FT ma tendencję do tworzenia większych masek obiektów, niż powinny być w rzeczywistości, a metoda SG jest wrażliwa na zmiany oświetlenia i zakłócenia/szumy na scenie, aby uzyskać jak najlepsze rezultaty detekcji, eliminując błędne klasyfikacje pikseli dla każdej z metod, należy połączyć oba te rozwiązania.  Fuzji nie można dokonać jednak na przykład poprzez proste dodanie obu wyników. Zaproponowany został następujący model klasyfikacji:
@@ -121,16 +151,16 @@ Używane w metodzie sieci neuronowe złożone są z węzłów w postaci komórek
 
 \begin{figure}[!h]
 \centering
-\includegraphics[width=0.2\textwidth]{img/sample}
-\caption{Ilustracja konwersji \label{fig:binPixel}}
+\includegraphics[width=0.5\textwidth]{img/binPixel}
+\caption{Reprezentacja piksela [103,170,134] na obrazie binarnym \label{fig:binPixel}}
 \end{figure}
 
 \item Każdemu pikselowi z tak uzyskanego obrazu zostaje przypisana etykieta w taki sposób, aby cały obszar został zmapowany oraz każda etykieta identyfikowała $n$ pikseli, których wartości '0' lub '1' łączone są kolejno w $n$-bitowe krotki. W ten sposób obraz zostaje pseudolosowo zmapowany na konkretne adresy RAM.
 
 \begin{figure}[!h]
 \centering
-\includegraphics[width=0.2\textwidth]{img/sample}
-\caption{Łączenie wartości pikseli w krotki \label{fig:map}}
+\includegraphics[width=0.8\textwidth]{img/map}
+\caption{Łączenie wartości pikseli dla etykiety z numerem 2 w krotki oraz zamiana na adres bitu dyskryminatora.\label{fig:map}}
 \end{figure}
 
 
@@ -140,7 +170,7 @@ Dyskryminatory dla każdego piksela zawarte są w tablicy $x\times y$, gdzie odp
 \paragraph{}
 Procedurę mapowania wykonuje się dla próbek testowych w celu inicjalizacji tła. Dla każdego z pikseli wejściowych $I(x,y)$ wyznaczana jest jego reprezentacja binarna (przykład takiej konwersji na rys. \ref{fig:binPixel}), a następnie zgodnie z mapą etykiet tworzone są 16-bitowe krotki odpowiadające wartościom kolejnych pikseli binarnego obrazu. Ilustracja procedury zamieszczona jest na rys. \ref{fig:map}. Uzyskane krotki przekształcone zostają na adresy dyskryminatora, pod którymi wpisywana jest wartość '1'. W ten sposób powstaje pewien wzorzec dla każdego piksela.
 \paragraph{}
-Przykładowo, krotka $0100101010010110$ wskazuje na $19094$-ty bit dyskryminatora, powinien on więc uzyskać wartość ''1''. Aby uzyskać do niego dostęp, należy najpierw znaleźć jego pozycję w tablicy. Ponieważ tablica dyskryminatora przechowuje wartości 16-bitowe, indeks wyznaczany jest poprzez podzielenie bez reszty obliczonego adresu przez liczbę 16 (równoznaczne z przesunięciem bitowym o 4 bity w prawo). Konkretna pozycja piksela wyznaczana jest jako reszta z dzielenia adresu przez 16.   
+Przykładowo, krotka $1111110110000000$ wskazuje na $64896$-ty bit dyskryminatora, powinien on więc uzyskać wartość ''1''. Aby uzyskać do niego dostęp, należy najpierw znaleźć jego pozycję w tablicy. Ponieważ tablica dyskryminatora przechowuje wartości 16-bitowe, indeks wyznaczany jest poprzez podzielenie bez reszty obliczonego adresu przez liczbę 16 (równoznaczne z przesunięciem bitowym o 4 bity w prawo). Konkretna pozycja piksela wyznaczana jest jako reszta z dzielenia adresu przez 16.   
 \paragraph{}
 Detekcja zmian na scenie polega więc na porównaniu z nim każdej nowej wartości - jeśli nie spełniony jest wyznaczony próg podobieństwa, piksel klasyfikowany jest jako należący do obiektu pierwszoplanowego. W ten sposób nawet obiekty zatrzymane pozostają 'widoczne' w dalszej detekcji.
 \paragraph{}
@@ -192,7 +222,7 @@ W metodzie tej stosowana jest reprezentacja YCbCr (\ref{sec:colorSpace}). Wszyst
 \section{SuBSENSE}
 Zaletą metody przedstawionej w \cite{stflexible} jest brak konieczności testowania algorytmu dla każdego obserwowanego otoczenia w celu dostosowania parametrów dających najlepsze wyniki. Ze względu na mechanizm sprzężenia zwrotnego zastosowany w tym podejściu, są one dostosowywane automatycznie, pozwalając uzyskać bardzo dobre wyniki nawet w zmieniających się warunkach. SubSENSE (\textit{Self-Balanced SENsitivity SEgmenter}) to kolejna z metod opierających się na subtrakcji tła, postanowiono jednak podejść do tego zagadnienia w nieco inny sposób. Główne operacje realizowane przez ten algorytm to:
 \begin{itemize}
-\item wykrywanie zmian na poziomie piksela na podstawie informacji o kolorze w poprzednich ramkach oraz przy pomocy metody LBSP (\ref{sec:LBSP})
+\item wykrywanie zmian na poziomie piksela na podstawie informacji o kolorze w poprzednich ramkach oraz przy pomocy metody LBSP (ang. \textit{Local Binary Similarity Patterns} - \ref{sec:LBSP})
 \item automatyczne dostosowanie parametrów lokalnej czułości
 \end{itemize}
 Metoda opisywana w tej sekcji pozwala na odmienne traktowanie rejonów, w których detekcja staje się zagadnieniem bardziej skomplikowanym - na przykład dla obszarów drobnego ruchu tła. 

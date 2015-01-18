@@ -1,5 +1,6 @@
 \chapter{Testy rozwiązań}
 \label{cha:testy}
+\renewcommand{\tablename}{Tabela}
 
 W celu ewaluacji działania opisanych w rozdziale \ref{cha:analiza} metod detekcji przeprowadzone zostały testy każdego z rozwiązań. Miały one na celu zbadać nie tylko dokładność detekcji, ale także i szybkość wykonywania algorytmu. Jest ona szczególnie ważna ze względu na fakt konieczności przetwarzania danych z kamery wizyjnej w czasie rzeczywistym oraz możliwość zaprogramowania rozwiązania na urządzeniach wbudowanych. \\
 Do przeprowadzenia testów użyte zostały sekwencje ze strony changedetection.net, dotyczące dynamicznego ruchu na scenie. Zmierzona została szybkość detekcji, wyrażana jako ilość przetworzonych ramek na sekundę (ang. \textit{fps - frames per second}). W oparciu o ręcznie wyznaczane dla każdej ramki modele referencyjne (\textit{groundtruth}) przeprowadzona została także analiza skuteczności rozpatrywanych rozwiązań. Polegała ona na wyznaczeniu wartości:
@@ -23,3 +24,30 @@ jest wskaźnikiem stopnia poprawności detekcji.
 \textcolor{red}{WYNIKI DLA FTSG, CwisarDH itd.}
 \end{LARGE}
 
+\section{Wyniki}
+\begin{table}[t]
+\caption{Porównanie badanych metod}
+\label{tab:results}
+\centering
+\begin{tabular}{|l*{6}{|c}|}
+  \hline 
+  \textbf{Metoda} & \textbf{fps} & \textbf{1} & \textbf{2} & \textbf{1} & \textbf{2} & \textbf{5}\\
+  \hline
+  Flux Tensor with Split Gaussian Models & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  \hline
+  CwisarDH & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  \hline
+  Self-turning Background Subtraction & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  \hline
+  SubSENSE & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  \hline
+  Średnia bieżąca & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  \hline
+  Gaussian Mixture Models & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  \hline
+  ViBE & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  \hline
+  PBAS & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  \hline
+\end{tabular}
+\end{table}
