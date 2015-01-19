@@ -255,7 +255,66 @@ Metoda opisywana w tej sekcji pozwala na odmienne traktowanie rejonów, w który
 \label{sec:LBSP}
 W miejsce standardowego rozwiązania polegającego na porównywaniu kolorów pomiędzy kolejnymi ramkami, autorzy rozwiązania zdecydowali się wykorzystać metodę LBSP \cite{bilodeau2013change} (ang. \textit{Local Binary Similarity Patterns}), pozwalającą zastąpić informację o barwie piksela pewnymi deskryptorami, lepiej odzwierciedlającymi jego cechy. Dzięki temu mechanizm subtrakcji tła daje lepsze efekty. Wiele podejść stosowanych w innych rozwiązaniach bazuje na obliczaniu odległości euklidesowej pomiędzy poziomami jasności pikseli na wybranych fragmentach obrazu, jednak takie rozwiązanie często prowadzi do problemów z detekcją ruchu obiektów zajmujących duże obszary na scenie - spowodowane jest to jednorodnym charakterem powierzchni, przez co zmiana nie jest rejestrowana. Zbadano, iż LBSP lepiej radzi sobie z tym problemem. Ponadto, działania na wartościach binarnych są operacjami bardzo szybkimi, co zmniejsza znacznie czas detekcji.
 \paragraph{}
-Wyznaczanie lokalnego binarnego wzorca podobieństwa odbywa się na dwóch płaszczyznach - wewnątrz rozważanego regionu osobno dla każdej z analizowanych ramek oraz tegoż regionu pomiędzy ramkami. Porównywane są tu wartości piksela centralnego obszaru z pikselami sąsiadującymi. Analizowany fragment R ma rozmiar \textit{n} x \textit{n}, brane pod uwagę piksele sąsiedztwa (nie wszystkie wartości muszą być analizowane, niekiedy porównuje się wybiórczo) oznaczono jako P. Wyznaczanie LBSP odbywa się na podstawie niniejszego wzoru:
+Wyznaczanie lokalnego binarnego wzorca podobieństwa odbywa się na dwóch płaszczyznach - wewnątrz rozważanego regionu osobno dla każdej z analizowanych ramek (piksel centralny $i_{c}$ oraz piksele sąsiedztwa $i_{p}$ pochodzą z jednego obrazu) oraz tego regionu pomiędzy ramkami ($i_{p}$ to wartość piksela $I(x_{c},y_{c})$ z porównywanej ramki). Przykład dla obu przypadków przedstawiony jest na rys. \ref{fig:LBSP}. Porównywane są tu wartości piksela centralnego obszaru (na rysunku wartość 15) z pikselami sąsiadującymi. Analizowany fragment R ma rozmiar \textit{n} x \textit{n} (na rysunku - 3 x 3), brane pod uwagę piksele sąsiedztwa (nie wszystkie wartości muszą być analizowane, niekiedy porównuje się wybiórczo) oznaczono jako P.
+
+\begin{figure}[b]
+\centering
+\begin{subfigure}[b]{0.2\textwidth}
+\centering
+\begin{tabular}{*{3}{|c}|}
+  \hline 
+  10 & 30  & 4 \\
+  \hline
+  20 & 15   & 5 \\
+  \hline
+  20 & 50  & 20 \\
+  \hline
+\end{tabular}
+\caption{}
+\end{subfigure}
+\begin{subfigure}[b]{0.2\textwidth}
+\centering
+\begin{tabular}{*{3}{|c}|}
+  \hline 
+  12 & 30  & 4 \\
+  \hline
+  25 & 13   & 5 \\
+  \hline
+  26 & 52  & 21 \\
+  \hline
+\end{tabular}
+\caption{}
+\end{subfigure}
+\begin{subfigure}[b]{0.2\textwidth}
+\centering
+\begin{tabular}{*{3}{|c}|}
+  \hline 
+  10 & 30  & 4 \\
+  \hline
+  20 & \textbf{15}   & 5 \\
+  \hline
+  20 & 50  & 20 \\
+  \hline
+\end{tabular}
+\caption{\label{fig:LBSPwewn}}
+\end{subfigure}
+\begin{subfigure}[b]{0.2\textwidth}
+\centering
+\begin{tabular}{*{3}{|c}|}
+  \hline 
+  12 & 30  & 4 \\
+  \hline
+  25 & \textbf{15}   & 5 \\
+  \hline
+  26 & 52  & 21 \\
+  \hline
+\end{tabular}
+\caption{\label{fig:LBSPzewn}}
+\end{subfigure}
+\caption{Przykładowe rejony używane w liczeniu LBSP: (a) - obszar z ramki $t$, (b) - obszar tła, (c) - wewnętrzne LBSP, (d) - zewnętrzne LBSP. \label{fig:LBSP}}
+\end{figure} 
+
+Wyznaczanie LBSP odbywa się na podstawie niniejszego wzoru:
 \begin{equation}
 LBSP_{R}(x_{c},y_{c}) = 
 \sum_{p=0}^{P-1}d(i_{p}-i_{c})2^p
@@ -278,12 +337,12 @@ $i_{c}$ : & piksel centralny obszaru\\
 \end{tabular} \\
 
 Centralny piksel może być wybrany zarówno z obszaru, z którego pochodzi analizowane sąsiedztwo, jak i z innego regionu - na tym samym obrazie bądź z innej ramki.
-\subsubsection{Subtrakcja tła}
+\paragraph{Subtrakcja tła \\}
 Subtrakcja tła z pomocą LBSP odbywa się na podstawie porównania obecnej ramki z modelem uzyskanym z F pierwszych sekwencji. 
 \paragraph{Faza inicjalizacyjna \\}
-Analiza pierwszej ramki opiera się na wyznaczeniu LBSP  jest jedynie wewnątrz obszaru (ip i ic znajdują się na tej samej ramce). Dla regionu 5 x 5 z wybranymi pikselami sąsiedztwa w liczbie 16 otrzymywane są w ten sposób 16-bitowe wyniki. Ponieważ dla każdego kanału (R, G i B) LBSP wyznaczane jest osobno, po połączeniu uzyskuje się ciąg 48-bitowy. Jeśli w sekwencji testowej dany ciąg powtórzony jest przynajmniej B razy, region oznaczony zostaje jako tło. W modelu M zapisane zostają wartości jasności odpowiadających wzorcowi pikseli. Następnie poddane analizie zostają kolejne ramki ze zbioru F, na podstawie których dokonuje się aktualizacji modelu tła. Po fazie inicjalizacyjnej model pozostaje niezmienny.
+Analiza pierwszej ramki opiera się na wyznaczeniu LBSP  jest jedynie wewnątrz obszaru (ip i ic znajdują się na tej samej ramce - rys. \ref{fig:LBSPwewn}). Dla regionu 5 x 5 z wybranymi pikselami sąsiedztwa w liczbie 16 otrzymywane są w ten sposób 16-bitowe wyniki. Ponieważ dla każdego kanału (R, G i B) LBSP wyznaczane jest osobno, po połączeniu uzyskuje się ciąg 48-bitowy. Jeśli w sekwencji testowej dany ciąg powtórzony jest przynajmniej określoną liczbę razy B, region oznaczony zostaje jako tło. W modelu M zapisane zostają wartości jasności na każdym z kanałów odpowiadających wzorcowi pikseli. Następnie poddane analizie zostają kolejne ramki ze zbioru F, na podstawie których dokonuje się aktualizacji modelu tła. Po fazie inicjalizacyjnej model pozostaje niezmienny.
 \paragraph{Detekcja obiektów \\}
-Detekcja obiektów odbywa się na zasadzie porównywania kolejnych ramek z modelem tła. LBSP wyznaczane jest tutaj międzyramkowo, to znaczy piksele $i_{p}$ brane są z aktualnej ramki, $i_{c}$ - z odpowiadającego piksela tła. Decyzja o tym, gdzie piksel ma zostać zaklasyfikowany (bg - tło, fg - pierwszy plan), podejmowana jest w następujący sposób:
+Detekcja obiektów odbywa się na zasadzie porównywania kolejnych ramek z modelem tła. LBSP wyznaczane jest tutaj międzyramkowo, to znaczy piksele $i_{p}$ brane są z aktualnej ramki, $i_{c}$ - z odpowiadającego piksela tła (rys. \ref{fig:LBSPzewn}). Decyzja o tym, gdzie piksel ma zostać zaklasyfikowany (bg - tło, fg - pierwszy plan), podejmowana jest w następujący sposób:
 \begin{equation}
 L_{f}(x,y)=\left\{
 \begin{split}
@@ -299,7 +358,7 @@ H() : &  odległość Hamminga (wektorowa miara odmienności dwóch ciągów tak
 $T_{h}$ : & próg odległości\\
 \end{tabular} \\
 
-\subsection{Mechanizm działania}
+\subsection{Mechanizm działania metody SubSENSE}
 Początkowy model tła wyznaczany jest na podstawie pierwszych próbek nagrania. Rejestrowane są historyczne wartości każdego piksela. W fazie detekcji - jeśli aktualna reprezentacja piksela x przetnie się z minimum 2 próbkami, klasyfikowany jest on jako element tła i odpowiadającej mu pozycji na mapie segmentacji przypisana zostaje wartość St(x) = 0. W czasie działania algorytmu, w celu dostosowania się do ewentualnych zmian oświetlenia bądź innych czynników, próbki w modelu tła są losowo zastępowane przez nowe wartości w myśl polityki konserwatywnej.
 \paragraph{}
 Do porównywania wartości używana jest tu metoda LBSP, przez co udaje się uzyskać informacje nie tylko o kolorze piksela, ale także jego podobieństwie do sąsiedztwa. Dla każdego kanału wyniki uzyskiwane są oddzielnie. Odległość między pikselami obliczana jest odpowiednio metodą L1 (zgodnie z geometrią taksówkową (ang. \textit{taxicab geometry}) dla koloru i dystansem Hamminga dla ciągu bitów uzyskanego z LBSP. Gdy próbki są oddalone od siebie o nie więcej niż progi $R_{color}$ i $R_{LBSP}$, stwierdzona zostaje ich zgodność i aktualny piksel klasyfikowany jest jako tło. Wartości $R_{color}$ oraz $R_{LBSP}$ wyznaczane są na podstawie ustalonych wartości $R_{color}^{0}$ i $R_{LBSP}^{0}$ dynamicznego parametru $R(x)$, o którym mowa będzie w dalszej sekcji:

@@ -25,7 +25,7 @@ jest wskaźnikiem stopnia poprawności detekcji.
 \section{Wyniki}
 Wszystkie testy przeprowadzone zostały na maszynie z procesorem Intel\textregistered Core\texttrademark i3 2.13 GHz i 3 GB RAM. Implementacje algorytmów przetwarzają dane sekwencyjnie.
 \paragraph{}
-Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algorytmu CwisarDH w przypadku zestawów \textit{PETS2006} (tabela \ref{tab:resultsPETS2006}) oraz \textit{fall} (tabela \ref{tab:resultsFall}) nie udało się uzyskać wyników metody (tabela \ref{tab:resultsFall}). Dla nagrania o wymiarach 720 x 480 (720 x 576 w przypadku nagrania \textit{PETS2006}) na dyskryminatory należy przydzielić $720 \cdot 480 \cdot 2^{16}$ bitów, a więc przynajmniej 2,64 GB RAM-u, czyli 92\% pamięci dostępnej sprzętowo, co uniemożliwia obliczenia.
+Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algorytmu CwisarDH w przypadku zestawów \textit{PETS2006} (tabela \ref{tab:resultsPETS2006}) oraz \textit{fall} (tabela \ref{tab:resultsFall}) nie udało się uzyskać wyników metody. Dla nagrania o wymiarach 720 x 480 (720 x 576 w przypadku nagrania \textit{PETS2006}) na dyskryminatory należy przydzielić $720 \cdot 480 \cdot 2^{16}$ bitów, a więc przynajmniej 2,64 GB RAM-u, czyli 92\% pamięci dostępnej sprzętowo, co uniemożliwia obliczenia.
 
 \subsection{Statyczne tło}
 
@@ -34,7 +34,7 @@ Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algory
 \caption{Porównanie badanych metod dla zestawu \textit{highway}}
 \label{tab:resultsHighway}
 \centering
-\begin{tabular}{|l*{6}{|c}|}
+\begin{tabular}{|l*{8}{|c}|}
   \hline 
   \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
   \hline
@@ -53,7 +53,7 @@ Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algory
 \caption{Porównanie badanych metod dla zestawu \textit{office}}
 \label{tab:resultsOffice}
 \centering
-\begin{tabular}{|l*{6}{|c}|}
+\begin{tabular}{|l*{8}{|c}|}
   \hline 
   \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
   \hline
@@ -72,7 +72,7 @@ Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algory
 \caption{Porównanie badanych metod dla zestawu \textit{pedestrians}}
 \label{tab:resultsPedestrians}
 \centering
-\begin{tabular}{|l*{6}{|c}|}
+\begin{tabular}{|l*{8}{|c}|}
   \hline 
   \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
   \hline
@@ -91,7 +91,7 @@ Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algory
 \caption{Porównanie badanych metod dla zestawu \textit{PETS2006}}
 \label{tab:resultsPETS2006}
 \centering
-\begin{tabular}{|l*{6}{|c}|}
+\begin{tabular}{|l*{8}{|c}|}
   \hline 
   \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
   \hline
@@ -108,11 +108,11 @@ Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algory
 
 
 \subsection{Dynamiczne tło}
-\begin{table}[h]
+\begin{table}[!htb]
 \caption{Porównanie badanych metod dla zestawu \textit{boats}}
 \label{tab:resultsBoats}
 \centering
-\begin{tabular}{|l*{6}{|c}|}
+\begin{tabular}{|l*{8}{|c}|}
   \hline 
   \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
   \hline
@@ -127,11 +127,11 @@ Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algory
 \end{tabular}
 \end{table}
 
-\begin{table}[t]
+\begin{table}[h]
 \caption{Porównanie badanych metod dla zestawu \textit{canoe}}
 \label{tab:resultsCanoe}
 \centering
-\begin{tabular}{|l*{6}{|c}|}
+\begin{tabular}{|l*{8}{|c}|}
   \hline 
   \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
   \hline
@@ -146,11 +146,11 @@ Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algory
 \end{tabular}
 \end{table}
 
-\begin{table}[t]
+\begin{table}[h]
 \caption{Porównanie badanych metod dla zestawu \textit{fall}}
 \label{tab:resultsFall}
 \centering
-\begin{tabular}{|l*{6}{|c}|}
+\begin{tabular}{|l*{8}{|c}|}
   \hline 
   \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
   \hline
@@ -165,11 +165,11 @@ Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algory
 \end{tabular}
 \end{table}
 
-\begin{table}[t]
+\begin{table}[h]
 \caption{Porównanie badanych metod dla zestawu \textit{fountain01}}
 \label{tab:resultsFountain01}
 \centering
-\begin{tabular}{|l*{6}{|c}|}
+\begin{tabular}{|l*{8}{|c}|}
   \hline 
   \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
   \hline
@@ -184,11 +184,11 @@ Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algory
 \end{tabular}
 \end{table}
 
-\begin{table}[t]
+\begin{table}[h]
 \caption{Porównanie badanych metod dla zestawu \textit{fountain02}}
 \label{tab:resultsFountain02}
 \centering
-\begin{tabular}{|l*{6}{|c}|}
+\begin{tabular}{|l*{8}{|c}|}
   \hline 
   \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
   \hline
@@ -201,11 +201,13 @@ Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algory
   Self-turning Background Subtraction & 0.5 & 257705 & 29930 & 123932401 & 9524 & 0.928894287609216\\
   \hline
 \end{tabular}
-\end{table}\begin{table}[t]
+\end{table}
+
+\begin{table}[h]
 \caption{Porównanie badanych metod dla zestawu \textit{overpass}}
 \label{tab:resultsOverpass}
 \centering
-\begin{tabular}{|l*{6}{|c}|}
+\begin{tabular}{|l*{8}{|c}|}
   \hline 
   \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
   \hline

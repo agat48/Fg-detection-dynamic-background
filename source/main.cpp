@@ -12,7 +12,7 @@ using namespace std;
 
 
 #define BUFFER_SIZE 30
-#define OMITTED_FRAMES 1800
+#define OMITTED_FRAMES 0
 
 int countDir(const char* path);
 static void drawOptFlowMap(const Mat& flow, Mat& cflowmap, int step,
@@ -36,17 +36,19 @@ int main( int argc, const char** argv )
 {
     const string absPath = "D:/Dokumenty/Inzynierka"; //"C:/Users/Agata/Desktop/Inzynierka";
     string path = absPath + "/git_repo/Fg-detection-dynamic-background";
-    path = absPath + "/samples/dynamicBackground/dynamicBackground/";
-    const string sampleNames[6] = {"boats","canoe","fall","fountain01","fountain02","overpass"};
-    path = path + sampleNames[0] + "/input/";
+    const int mode = 0;
+    const string datasets[2] = {"dynamicBackground", "baseline"};
+    path = absPath + "/samples/" + datasets[mode] + "/" + datasets[mode] + "/";
+    const string sampleNames[2][6] = {{"boats","canoe","fall","fountain01","fountain02","overpass"},{"highway", "office", "pedestrians", "PETS2006"}};
+    path = path + sampleNames[mode][4] + "/input/";
 //    FTSG(path);
-    CwisarDH(path);
+//    CwisarDH(path);
 //    GMM(path);
 //    ViBE(path);
-//    PBASfun(path);
+    PBASfun(path);
 
     return 0;
-}
+};
 
 int countDir(const char *path) {
     DIR *dp;
@@ -152,18 +154,20 @@ void calculateAddress(Vec3b ptr, ushort map[192][3], ushort address[36]) {
 int GMM(string path) {
     int sampleCount = countDir(path.c_str()) - 2;
     char filename[12];
-    Mat frame, bgMask;
+    Mat frame, bgMask, bgMaskOpen;
     BackgroundSubtractorMOG2 mog(3, 16, false);
     sprintf(filename, "in%06d.jpg", OMITTED_FRAMES + 1);
     frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
+    Mat strel = getStructuringElement(MORPH_ELLIPSE, Size(3,3), Point(1,1));
     namedWindow("input", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
     namedWindow("Split Gaussian", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
     for (int i = OMITTED_FRAMES + 1; i < sampleCount; i++) {
-        mog(frame,bgMask,0.004);
+        mog(frame,bgMask,0.001);
         sprintf(filename, "in%06d.jpg", i);
         frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
+        morphologyEx(bgMask, bgMaskOpen, MORPH_OPEN, strel);
         imshow("input", frame);
-        imshow("Split Gaussian", bgMask);
+        imshow("Split Gaussian", bgMaskOpen);
         waitKey(1);
         cout << endl << i << endl;
     }
@@ -190,6 +194,7 @@ int ViBE(string path) {
             imshow("output", fg);
             waitKey(1);
         }
+        cout << i << endl;
     }
     destroyWindow("output"); //destroy the window with the name, "Split Gaussian"
     destroyWindow("input"); //destroy the window with the name, "Split Gaussian"
@@ -221,6 +226,7 @@ int PBASfun(string path) {
             sprintf(filename, "in%06d.jpg", i);
             frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
         }
+        cout << i << endl;
     }
     destroyWindow("output"); //destroy the window with the name, "Split Gaussian"
     destroyWindow("input"); //destroy the window with the name, "Split Gaussian"
