@@ -2,10 +2,11 @@
 \label{cha:testy}
 \renewcommand{\tablename}{Tabela}
 
-W celu ewaluacji działania opisanych w rozdziale \ref{cha:analiza} metod detekcji przeprowadzone zostały testy każdego z rozwiązań. Miały one na celu zbadać nie tylko dokładność detekcji, ale także i szybkość wykonywania algorytmu. Jest ona szczególnie ważna ze względu na fakt konieczności przetwarzania danych z kamery wizyjnej w czasie rzeczywistym oraz możliwość zaprogramowania rozwiązania na urządzeniach wbudowanych. \\
-Do przeprowadzenia testów użyte zostały sekwencje ze strony changedetection.net, dotyczące dynamicznego ruchu na scenie. Zmierzona została szybkość detekcji, wyrażana jako ilość przetworzonych ramek na sekundę (ang. \textit{fps - frames per second}). W oparciu o ręcznie wyznaczane dla każdej ramki modele referencyjne (\textit{groundtruth}) przeprowadzona została także analiza skuteczności rozpatrywanych rozwiązań. Polegała ona na wyznaczeniu wartości:
+W celu ewaluacji działania opisanych w rozdziale \ref{cha:analiza} metod detekcji przeprowadzone zostały testy każdego z rozwiązań. Miały one na celu zbadać nie tylko dokładność detekcji, ale także i szybkość wykonywania algorytmu. Jest ona szczególnie ważna ze względu na konieczność przetwarzania danych z kamery wizyjnej w czasie rzeczywistym oraz możliwość realizacji rozwiązania na urządzeniach wbudowanych, np. w tzw. inteligentnych kamerach (ang. \textit{smart camera}). 
+\paragraph{}
+Do przeprowadzenia testów użyte zostały sekwencje ze strony changedetection.net, dotyczące dynamicznego ruchu na scenie oraz zbiory podstawowych nagrań (ze statycznym tłem). Zmierzona została szybkość detekcji, wyrażana jako ilość przetworzonych ramek na sekundę (ang. \textit{fps - frames per second}). W oparciu o ręcznie wyznaczane dla każdej ramki modele referencyjne (\textit{groundtruth}) przeprowadzona została także analiza skuteczności rozpatrywanych rozwiązań. Polegała ona na wyznaczeniu wartości:
 \begin{itemize}
-\item TP - \textit{True Positives}, czyli ilości pikseli zaklasyfikowanych poprawnie jako pierwszy plan
+\item TP - \textit{True Positives}, czyli liczby pikseli zaklasyfikowanych poprawnie jako pierwszy plan
 \item FP - \textit{False Positives} - liczby pikseli wykrytych jako pierwszy plan, jednak w modelu referencyjnym będące tłem
 \item TN - \textit{True Negatives} - ilości zgodnych z modelem klasyfikacji pikseli tła
 \item FN - \textit{False Negatives}, oznaczającego liczbę pikseli z obszarów, na których nie został wykryty ruch pomimo przemieszczenia obiektów sceny
@@ -20,34 +21,201 @@ F &= \frac{2PR}{P+R}
 \end{align}
 jest wskaźnikiem stopnia poprawności detekcji.
 \\
-\begin{LARGE}
-\textcolor{red}{WYNIKI DLA FTSG, CwisarDH itd.}
-\end{LARGE}
 
 \section{Wyniki}
-\begin{table}[t]
-\caption{Porównanie badanych metod}
-\label{tab:results}
+Wszystkie testy przeprowadzone zostały na maszynie z procesorem Intel\textregistered Core\texttrademark i3 2.13 GHz i 3 GB RAM. Implementacje algorytmów przetwarzają dane sekwencyjnie.
+\paragraph{}
+Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algorytmu CwisarDH w przypadku zestawów \textit{PETS2006} (tabela \ref{tab:resultsPETS2006}) oraz \textit{fall} (tabela \ref{tab:resultsFall}) nie udało się uzyskać wyników metody (tabela \ref{tab:resultsFall}). Dla nagrania o wymiarach 720 x 480 (720 x 576 w przypadku nagrania \textit{PETS2006}) na dyskryminatory należy przydzielić $720 \cdot 480 \cdot 2^{16}$ bitów, a więc przynajmniej 2,64 GB RAM-u, czyli 92\% pamięci dostępnej sprzętowo, co uniemożliwia obliczenia.
+
+\subsection{Statyczne tło}
+
+
+\begin{table}[h]
+\caption{Porównanie badanych metod dla zestawu \textit{highway}}
+\label{tab:resultsHighway}
 \centering
 \begin{tabular}{|l*{6}{|c}|}
   \hline 
-  \textbf{Metoda} & \textbf{fps} & \textbf{1} & \textbf{2} & \textbf{1} & \textbf{2} & \textbf{5}\\
+  \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
   \hline
-  Flux Tensor with Split Gaussian Models & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  Flux Tensor with Split Gaussian Models & 0.5 & 5215277 & 369492 & 86284977 & 242712 & 0.933839340534944 & 0.955530874100332 & 0.944560588939828\\
   \hline
-  CwisarDH & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  CwisarDH & 0.5 & 5034937 & 440862 & 86213607 & 423052 & 0.91948900973173 & 0.922489400400037 & 0.920986761404190 \\
   \hline
-  Self-turning Background Subtraction & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  SubSENSE & 0.5 & 5197678 & 360455 & 86294014 & 260311 & 0.93514818734996 & 0.952306426414564 & 0.943649316883019 \\
   \hline
-  SubSENSE & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  Self-turning Background Subtraction & 0.5 & 5217371 & 364925 & 86289544 & 240618 & 0.934628153003710 & 0.955914531890775 & 0.945151506505493 \\
   \hline
-  Średnia bieżąca & 0.5 & 0 & 0 & 0 & 0 & 0\\
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\caption{Porównanie badanych metod dla zestawu \textit{office}}
+\label{tab:resultsOffice}
+\centering
+\begin{tabular}{|l*{6}{|c}|}
+  \hline 
+  \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
   \hline
-  Gaussian Mixture Models & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  Flux Tensor with Split Gaussian Models & 0.5 & 7847735 & 317484 & 116221202 & 794359 & 0.933847665001538 \\
   \hline
-  ViBE & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  CwisarDH & 0.5 & 7689895 & 124774 & 116413912 & 952199 & 0.934557421772435 \\
   \hline
-  PBAS & 0.5 & 0 & 0 & 0 & 0 & 0\\
+  SubSENSE & 0.5 & 8177461 & 172398 & 116366288 & 464633 & 0.962509842158815 \\
+  \hline
+  Self-turning Background Subtraction & 0.5 & 5816237 & 335351 & 116203335 & 2825857 & 0 \\
+  \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\caption{Porównanie badanych metod dla zestawu \textit{pedestrians}}
+\label{tab:resultsPedestrians}
+\centering
+\begin{tabular}{|l*{6}{|c}|}
+  \hline 
+  \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
+  \hline
+  Flux Tensor with Split Gaussian Models & 0.5 & 656530 & 80971 & 67488136 & 14332 & 0 \\
+  \hline
+  CwisarDH & 0.5 & 649493 & 30923 & 67538184 & 21369 & 0 \\
+  \hline
+  SubSENSE & 0.5 & 629331 & 18672 & 67550435 & 41531 & 0 \\
+  \hline
+  Self-turning Background Subtraction & 0.5 & 659563 & 95654 & 67473453 & 11299 & 0 \\
+  \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[h]
+\caption{Porównanie badanych metod dla zestawu \textit{PETS2006}}
+\label{tab:resultsPETS2006}
+\centering
+\begin{tabular}{|l*{6}{|c}|}
+  \hline 
+  \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
+  \hline
+  Flux Tensor with Split Gaussian Models & 0.5 & 4649431 & 616278 & 366097026 & 178759 & 0 \\
+  \hline
+  CwisarDH & - & - & - & - & - & - \\
+  \hline
+  SubSENSE & 0.5 & 4689953 & 451533 & 366261771 & 138237 & 0 \\
+  \hline
+  Self-turning Background Subtraction & 0.5 & 4351746 & 837867 & 365875437 & 476444 & 0 \\
+  \hline
+\end{tabular}
+\end{table}
+
+
+\subsection{Dynamiczne tło}
+\begin{table}[h]
+\caption{Porównanie badanych metod dla zestawu \textit{boats}}
+\label{tab:resultsBoats}
+\centering
+\begin{tabular}{|l*{6}{|c}|}
+  \hline 
+  \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
+  \hline
+  Flux Tensor with Split Gaussian Models & 0.5 & 832767 & 31911 & 245687708 & 718084 & 0.689511076041728\\
+  \hline
+  CwisarDH & 0.5 & 0 & 0 & 0 & 0 & 0 \\
+  \hline
+  SubSENSE & 0.5 & 1181396 & 185797 & 42306157 & 189704 & 0.862870408681613\\
+  \hline
+  Self-turning Background Subtraction & 0.5 & 698976 & 57239 & 42434715 & 672124 & 0.657143864448848\\
+  \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Porównanie badanych metod dla zestawu \textit{canoe}}
+\label{tab:resultsCanoe}
+\centering
+\begin{tabular}{|l*{6}{|c}|}
+  \hline 
+  \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
+  \hline
+  Flux Tensor with Split Gaussian Models & 0.5 & 952474 & 14048 & 28405673 & 90895 & 0.947786720772420 \\
+  \hline
+  CwisarDH & 0.5 & 936801 & 17618 & 28402103 & 106568 & 0.937838249103508\\
+  \hline
+  SubSENSE & 0.5 & 687542 & 4672 & 28415049 & 355827 & 0.792289392094760 \\
+  \hline
+  Self-turning Background Subtraction & 0.5 & 1000576 & 112940 & 28306781 & 42793 & 0.927797263182784\\
+  \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Porównanie badanych metod dla zestawu \textit{fall}}
+\label{tab:resultsFall}
+\centering
+\begin{tabular}{|l*{6}{|c}|}
+  \hline 
+  \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
+  \hline
+  Flux Tensor with Split Gaussian Models & 0.5 & 18112851 & 2509468 & 1.014280439000000e+09 & 225146 & 0.929810271559399\\
+  \hline
+  CwisarDH & - & - & - & - & - & -\\
+  \hline
+  SubSENSE & 0.5 & 18112851 & 2509468 & 1.014280439000000e+09 & 225146 & 0.929810271559399\\
+  \hline
+  Self-turning Background Subtraction & 0.5 & 17673769 & 19741217 & 997048690 & 664228 & 0.634002632648373\\
+  \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Porównanie badanych metod dla zestawu \textit{fountain01}}
+\label{tab:resultsFountain01}
+\centering
+\begin{tabular}{|l*{6}{|c}|}
+  \hline 
+  \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
+  \hline
+  Flux Tensor with Split Gaussian Models & 0.5 & 68620 & 22384 & 93260671 & 8883 & 0.814446877577786\\
+  \hline
+  CwisarDH & 0.5 & 49464 & 34778 & 93248277 & 28039 & 0.611629416674395\\
+  \hline
+  SubSENSE & 0.5 & 67978 & 35036 & 93248019 & 9525 & 0.753147902967588\\
+  \hline
+  Self-turning Background Subtraction & 0.5 & 58760 & 16504 & 93266551 & 18743 & 0.769276087113055\\
+  \hline
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Porównanie badanych metod dla zestawu \textit{fountain02}}
+\label{tab:resultsFountain02}
+\centering
+\begin{tabular}{|l*{6}{|c}|}
+  \hline 
+  \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
+  \hline
+  Flux Tensor with Split Gaussian Models & 0.5 & 253173 & 11942 & 123950389 & 14056 & 0.951163157657454\\
+  \hline
+  CwisarDH & 0.5 & 245415 & 15020 & 123947311 & 21814 & 0.930194214500136\\
+  \hline
+  SubSENSE & 0.5 & 246717 & 8725 & 123953606 & 20512 & 0.944062326013879\\
+  \hline
+  Self-turning Background Subtraction & 0.5 & 257705 & 29930 & 123932401 & 9524 & 0.928894287609216\\
+  \hline
+\end{tabular}
+\end{table}\begin{table}[t]
+\caption{Porównanie badanych metod dla zestawu \textit{overpass}}
+\label{tab:resultsOverpass}
+\centering
+\begin{tabular}{|l*{6}{|c}|}
+  \hline 
+  \textbf{Nazwa metody} & \textbf{fps} & \textbf{TP} & \textbf{FP} & \textbf{TN} & \textbf{FN} & \textbf{P} & \textbf{R} & \textbf{F}\\
+  \hline
+  Flux Tensor with Split Gaussian Models & 0.5 & 1867049 & 116414 & 145526347 & 110843 & 0.942631498565516\\
+  \hline
+  CwisarDH & 0.5 & 1638779 & 39222 & 145603539 & 339113 & 0.896513656171009\\
+  \hline
+  SubSENSE & 0.5 & 1552974 & 92584 & 145550177 & 424918 & 0.857179759621355\\
+  \hline
+  Self-turning Background Subtraction & 0.5 & 1947945 & 182522 & 145460239 & 29947 & 0.948283730803467\\
   \hline
 \end{tabular}
 \end{table}

@@ -4,13 +4,15 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
 #include <opencv2/video/background_segm.hpp>
+#include "bgfg_vibe.hpp"
+#include "PBAS.h"
 
 using namespace cv;
 using namespace std;
 
 
 #define BUFFER_SIZE 30
-#define OMITTED_FRAMES 6915
+#define OMITTED_FRAMES 1800
 
 int countDir(const char* path);
 static void drawOptFlowMap(const Mat& flow, Mat& cflowmap, int step,
@@ -24,6 +26,9 @@ void calculateAddress(Vec3b ptr, ushort map[192][3], ushort address[36]);
 
 int FTSG(string path);
 int CwisarDH(string path);
+int GMM(string path);
+int ViBE(string path);
+int PBASfun(string path);
 
 Mat window;
 
@@ -34,8 +39,12 @@ int main( int argc, const char** argv )
     path = absPath + "/samples/dynamicBackground/dynamicBackground/";
     const string sampleNames[6] = {"boats","canoe","fall","fountain01","fountain02","overpass"};
     path = path + sampleNames[0] + "/input/";
-    FTSG(path);
-//    CwisarDH(path);
+//    FTSG(path);
+    CwisarDH(path);
+//    GMM(path);
+//    ViBE(path);
+//    PBASfun(path);
+
     return 0;
 }
 
@@ -121,20 +130,103 @@ void calculateAddress(Vec3b ptr, ushort map[192][3], ushort address[36]) {
     for (int i = 0; i < 36; i++) {
         address[i] = 0;
     }
-    for (int k = 0; k < 3; k++) { //pixel retina construct
-        int val = (int) ptr[k];
-        val = (val <192 ? val : 192);
-        for (int l = 0; l < val; l++) { //for ones on the retina...
+    Vec3b val(ptr);
+    for (int k = 0; k < 3; k++) {
+//        val[k] = (val[k] <192 ? val[k] : 192);
+        val[k] = val[k] * 192 / 255;
+    }
+    for (int l = 0; l < 192; l++) { //pixel retina construct
+        for (int k = 0; k < 3; k++) { //for ones on the retina...
             label = map[l][k]; //calculating addresses for each label
-            address[label] <<= 1;
-            address[label] |= (ushort)1;
-        }
-        for (int l = val; l < 192; l++) { //for zeros on the retina increase counter
-            label = map[l][k];
-            address[label] <<= 1;
+            if (l < val[k]) {
+                address[label] <<= 1;
+                address[label] |= (ushort)1;
+            }
+            else {
+                address[label] <<= 1;
+            }
         }
     }
 }
+
+int GMM(string path) {
+    int sampleCount = countDir(path.c_str()) - 2;
+    char filename[12];
+    Mat frame, bgMask;
+    BackgroundSubtractorMOG2 mog(3, 16, false);
+    sprintf(filename, "in%06d.jpg", OMITTED_FRAMES + 1);
+    frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
+    namedWindow("input", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
+    namedWindow("Split Gaussian", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
+    for (int i = OMITTED_FRAMES + 1; i < sampleCount; i++) {
+        mog(frame,bgMask,0.004);
+        sprintf(filename, "in%06d.jpg", i);
+        frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
+        imshow("input", frame);
+        imshow("Split Gaussian", bgMask);
+        waitKey(1);
+        cout << endl << i << endl;
+    }
+    destroyWindow("Split Gaussian"); //destroy the window with the name, "Split Gaussian"
+    destroyWindow("input"); //destroy the window with the name, "Split Gaussian"
+}
+
+int ViBE(string path) {
+    int sampleCount = countDir(path.c_str()) - 2;
+    char filename[12];
+    Mat frame;
+    sprintf(filename, "in%06d.jpg", OMITTED_FRAMES + 1);
+    frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
+    bgfg_vibe bgfg;
+    bgfg.init_model(frame);
+    namedWindow("input", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
+    namedWindow("output", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
+    for (int i = OMITTED_FRAMES + 1; i < sampleCount; i++) {
+        {
+            sprintf(filename, "in%06d.jpg", i);
+            frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
+            Mat fg = *bgfg.fg(frame);
+            imshow("input", frame);
+            imshow("output", fg);
+            waitKey(1);
+        }
+    }
+    destroyWindow("output"); //destroy the window with the name, "Split Gaussian"
+    destroyWindow("input"); //destroy the window with the name, "Split Gaussian"
+    return 0;
+
+}
+
+int PBASfun(string path) {
+    int sampleCount = countDir(path.c_str()) - 2;
+    char filename[12];
+    Mat frame;
+    sprintf(filename, "in%06d.jpg", OMITTED_FRAMES + 1);
+    frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
+    PBAS pbas;
+    Mat bluredImage;
+    Mat pbasResult;
+
+
+    namedWindow("input", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
+    namedWindow("output", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
+    for (int i = OMITTED_FRAMES + 1; i < sampleCount; i++) {
+        {
+            GaussianBlur(frame, bluredImage, cv::Size(5,5), 1.5);
+            pbas.process(&bluredImage, &pbasResult);
+            medianBlur(pbasResult, pbasResult, 5);
+            imshow("input", frame);
+            imshow("output", pbasResult);
+            waitKey(1);
+            sprintf(filename, "in%06d.jpg", i);
+            frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
+        }
+    }
+    destroyWindow("output"); //destroy the window with the name, "Split Gaussian"
+    destroyWindow("input"); //destroy the window with the name, "Split Gaussian"
+    return 0;
+}
+
 
 int FTSG(string path) {
     int sampleCount = countDir(path.c_str()) - 2;
@@ -147,9 +239,10 @@ int FTSG(string path) {
     frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
     vector<Mat> average;
     Mat tensor(frame.rows,frame.cols, CV_32FC1,0.0);//, tensorMerge;
-    Mat tensorBin, bgMaskBin, fgMaskBin;
+    Mat tensorBin, bgMaskBin, bgMaskBinOpen, fgMaskBin;
     Mat moving;
     Mat bgMask, fgMask, amb, bg, bgDiff, output;
+    Mat strel = getStructuringElement(MORPH_ELLIPSE, Size(3,3), Point(1,1));
     double min, max;
 
     for (int i = 0; i < 3; i++) { //space in vectors
@@ -228,28 +321,30 @@ int FTSG(string path) {
         calculateAverage(flowBuffer, average);
         calculateVariance(flowBuffer, average, tensor);
         mog(frame,bgMask,0.004);
-        threshold(tensor, tensorBin, 0.03, 1, THRESH_BINARY);
+        threshold(tensor, tensorBin, 0.036, 1, THRESH_BINARY);
         threshold(bgMask, bgMaskBin, 150, 1, THRESH_BINARY);
-        bgMaskBin.convertTo(bgMaskBin, tensorBin.type());
-        bitwise_and(tensorBin, bgMaskBin, moving); //moving object detection
-        bitwise_xor(tensorBin, bgMaskBin, amb); //ambiguous regions detection
-        amb.convertTo(amb, tensorBin.type());
-        bitwise_and(amb, bgMaskBin, amb);
-        mog.getBackgroundImage(bg);
-        bgDiff = abs(frame - bg);
-        cvtColor(bgDiff, fgMask, COLOR_BGR2GRAY);
-        threshold(fgMask, fgMaskBin, 2, 1, THRESH_BINARY);
-        amb.convertTo(amb, fgMaskBin.type());
-        bitwise_and(fgMaskBin, amb, fgMaskBin); //static foreground mask
-        fgMaskBin.convertTo(fgMaskBin, moving.type());
-        bitwise_or(moving, fgMaskBin, output);
+        morphologyEx(bgMaskBin, bgMaskBinOpen, MORPH_OPEN, strel);
+        bgMaskBinOpen.convertTo(bgMaskBinOpen, tensorBin.type());
+        bitwise_and(tensorBin, bgMaskBinOpen, moving); //moving object detection
+//        bitwise_xor(tensorBin, bgMaskBinOpen, amb); //ambiguous regions detection
+//        amb.convertTo(amb, tensorBin.type());
+//        bitwise_and(amb, bgMaskBinOpen, amb);
+//        mog.getBackgroundImage(bg);
+//        bgDiff = abs(frame - bg);
+//        cvtColor(bgDiff, fgMask, COLOR_BGR2GRAY);
+//        threshold(fgMask, fgMaskBin, 2, 1, THRESH_BINARY);
+//        amb.convertTo(amb, fgMaskBin.type());
+//        bitwise_and(fgMaskBin, amb, fgMaskBin); //static foreground mask
+//        fgMaskBin.convertTo(fgMaskBin, moving.type());
+//        bitwise_or(moving, fgMaskBin, output);
         imshow("oryg", frame);
         imshow("Flux Tensor", tensorBin);
-        imshow("Split Gaussian", moving);
-        imshow("output", output);
+        imshow("Split Gaussian", bgMaskBinOpen);
+        imshow("output", moving);
         waitKey(1);
         swap(frame, nextFrame);
     }
+    waitKey(0);
     destroyWindow("oryg"); //destroy the window with the name, "Flux Tensor"
     destroyWindow("Flux Tensor"); //destroy the window with the name, "Flux Tensor"
     destroyWindow("Split Gaussian"); //destroy the window with the name, "Split Gaussian"
@@ -263,11 +358,13 @@ int CwisarDH(string path) {
     sprintf(filename, "in%06d.jpg", 1);
     frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
     int width = frame.cols, height = frame.rows, size = pow(2,12);
-    Mat out(height, width, CV_8UC1);
+    Mat out(height, width, CV_8UC1), outOpen;
+    Mat strel = getStructuringElement(MORPH_ELLIPSE, Size(3,3), Point(1,1));
     vector<Vec3b>** histBuff;
     ushort ***discr;
     discr = new ushort**[height];
     histBuff = new vector<Vec3b>*[height];
+    int histBuffSize = 100;
     for (int i = 0; i < height; i++) {
         discr[i] = new ushort*[width];
         histBuff[i] = new vector<Vec3b>[width];
@@ -295,13 +392,13 @@ int CwisarDH(string path) {
         }
     }
 
-    for (int i = 1800; i < BUFFER_SIZE; i++) { // initialization
+    for (int i = OMITTED_FRAMES; i < BUFFER_SIZE + OMITTED_FRAMES; i++) { // initialization
+        ushort address[36];
+        ushort ind, pos;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 Vec3b ptr = frame.at<Vec3b>(y,x);
-                ushort address[36];
                 calculateAddress(ptr, map, address);
-                ushort ind, pos;
                 for (int k = 0; k < 36; k++) { //discriminator per-pixel learning
                     ind = address[k] >> 4;
                     pos = address[k] % 16;
@@ -313,16 +410,16 @@ int CwisarDH(string path) {
         frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
         cout << endl << i << endl;
     }
-    namedWindow("input", CV_WINDOW_AUTOSIZE);
-    namedWindow("output", CV_WINDOW_AUTOSIZE);
-    for (int i = BUFFER_SIZE; i < sampleCount; i++) {
+//    namedWindow("input", CV_WINDOW_AUTOSIZE);
+//    namedWindow("output", CV_WINDOW_AUTOSIZE);
+    for (int i = BUFFER_SIZE + OMITTED_FRAMES; i < sampleCount; i++) {
         out = Mat::zeros(height, width, CV_8UC1);
+        ushort address[36];
+        ushort ind, pos;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 Vec3b ptr = frame.at<Vec3b>(y,x);
-                ushort address[36];
                 calculateAddress(ptr, map, address);
-                ushort ind, pos;
                 ushort similCount = 0;
                 for (int k = 0; k < 36; k++) { //discriminator per-pixel learning
                     ind = address[k] >> 4;
@@ -331,11 +428,11 @@ int CwisarDH(string path) {
                         similCount++;
                     }
                 }
-                if (similCount < 20) {
+                if (similCount < 34) {
                     out.at<uchar>(y,x) = 255;
                     histBuff[y][x].push_back(ptr);
-                    if (histBuff[y][x].size() > 10) { //history buffer learning
-                        for (int i = 0; i <= 10; i++) {
+                    if (histBuff[y][x].size() > histBuffSize) { //history buffer learning
+                        for (int i = 0; i < histBuffSize; i++) {
                             Vec3b ptr = histBuff[y][x][i];
                             calculateAddress(ptr, map, address);
                             ushort ind, pos;
@@ -358,14 +455,19 @@ int CwisarDH(string path) {
                 }
             }
         }
-        imshow("input", frame);
-        imshow("output", out);
-        waitKey(1);
+        morphologyEx(out, outOpen, MORPH_OPEN, strel);
+//        imshow("input", frame);
+//        imshow("output", outOpen);
+//        waitKey(1);
+        sprintf(filename, "out%06d.jpg", i);
+		imwrite(path + "outputCwisarDH/" + filename, outOpen);
         sprintf(filename, "in%06d.jpg", i+1);
         frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
+        cout << endl << i << endl;
     }
-    destroyWindow("input");
-    destroyWindow("output");
+    waitKey(0);
+//    destroyWindow("input");
+//    destroyWindow("output");
 
 
  // ZWALNIANIE PAMIĘCI - NIE TYKAC!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
