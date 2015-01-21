@@ -4,6 +4,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
 #include <opencv2/video/background_segm.hpp>
+#include <windef.h>
 #include "bgfg_vibe.hpp"
 #include "PBAS.h"
 
@@ -36,16 +37,25 @@ int main( int argc, const char** argv )
 {
     const string absPath = "D:/Dokumenty/Inzynierka"; //"C:/Users/Agata/Desktop/Inzynierka";
     string path = absPath + "/git_repo/Fg-detection-dynamic-background";
-    const int mode = 0;
     const string datasets[2] = {"dynamicBackground", "baseline"};
-    path = absPath + "/samples/" + datasets[mode] + "/" + datasets[mode] + "/";
     const string sampleNames[2][6] = {{"boats","canoe","fall","fountain01","fountain02","overpass"},{"highway", "office", "pedestrians", "PETS2006"}};
-    path = path + sampleNames[mode][4] + "/input/";
-//    FTSG(path);
-//    CwisarDH(path);
+    int mode = 0;
+    string basicPath = absPath + "/samples/" + datasets[mode] + "/" + datasets[mode] + "/";
+    for (int i = 0; i < 6; i++) {
+        path = basicPath + sampleNames[mode][i] + "/input/";
+//        FTSG(path);
+        CwisarDH(path);
+    }
+    mode = 1;
+    basicPath = absPath + "/samples/" + datasets[mode] + "/" + datasets[mode] + "/";
+    for (int i = 0; i < 4; i++) {
+        path = basicPath + sampleNames[mode][i] + "/input/";
+        FTSG(path);
+        CwisarDH(path);
+    }
 //    GMM(path);
 //    ViBE(path);
-    PBASfun(path);
+//    PBASfun(path);
 
     return 0;
 };
@@ -169,7 +179,7 @@ int GMM(string path) {
         imshow("input", frame);
         imshow("Split Gaussian", bgMaskOpen);
         waitKey(1);
-        cout << endl << i << endl;
+//        cout << endl << i << endl;
     }
     destroyWindow("Split Gaussian"); //destroy the window with the name, "Split Gaussian"
     destroyWindow("input"); //destroy the window with the name, "Split Gaussian"
@@ -238,17 +248,17 @@ int FTSG(string path) {
     int sampleCount = countDir(path.c_str()) - 2;
     char filename[12];
     Mat frame, nextFrame, flow;
-    vector<Mat> frameChannels, nextFrameChannels, flowChannels, tensorChannels;
+    vector<Mat> frameChannels, nextFrameChannels, flowChannels;
     vector<Mat> flowBuffer[3]; //flow history for each channel
     BackgroundSubtractorMOG2 mog(3, 16, false);
     sprintf(filename, "in%06d.jpg", OMITTED_FRAMES + 1);
     frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
     vector<Mat> average;
     Mat tensor(frame.rows,frame.cols, CV_32FC1,0.0);//, tensorMerge;
-    Mat tensorBin, bgMaskBin, bgMaskBinOpen, fgMaskBin;
+    Mat tensorBin, bgMaskBin, movingOpen, fgMaskBin;
     Mat moving;
     Mat bgMask, fgMask, amb, bg, bgDiff, output;
-    Mat strel = getStructuringElement(MORPH_ELLIPSE, Size(3,3), Point(1,1));
+    Mat strel = getStructuringElement(MORPH_ELLIPSE, Size(5,5), Point(2,2));
     double min, max;
 
     for (int i = 0; i < 3; i++) { //space in vectors
@@ -280,33 +290,19 @@ int FTSG(string path) {
         }
 //        calculateAverage(flowBuffer, average);
 //        calculateVariance(flowBuffer, average, tensor);
-////        for(int i = 0; i < 3; i++) {
-////            calcCovarMatrix(flowBuffer[i], tensorChannels[i], average[i], 0);
-////        }
 ////        minMaxLoc(tensor, &min, &max); //minimalna i maksymalna wartość
 ////        cout << min << " " << max << endl;
         mog(frame,bgMask,0.004);
-////        merge(tensorChannels, tensorMerge);
-////        cvtColor(tensorMerge, tensorBin, COLOR_BGR2GRAY);
-//        threshold(tensor, tensorBin, 0.09, 1, THRESH_BINARY);
-//        threshold(bgMask, bgMaskBin, 150, 1, THRESH_BINARY);
-////        tensor.copyTo(window);
-//        bgMaskBin.convertTo(bgMaskBin, tensorBin.type());
-////        moving = tensorBin & bgMaskMerge;
-//        bitwise_and(tensorBin, bgMaskBin, moving); //moving object detection
-//        bitwise_xor(tensorBin, bgMaskBin, amb); //ambiguous regions detection
-//        amb.convertTo(amb, tensorBin.type());
-//        bitwise_and(amb, bgMaskBin, amb);
         swap(frame, nextFrame);
-        cout << endl << i << endl;
+//        cout << endl << i << endl;
     }
 
-    namedWindow("oryg", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
-    namedWindow("Flux Tensor", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
-    namedWindow("Split Gaussian", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
-    namedWindow("output", CV_WINDOW_AUTOSIZE);
-
-    for (int i = BUFFER_SIZE + OMITTED_FRAMES; i < sampleCount-1; i++) { //loop over frames
+//    namedWindow("oryg", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
+//    namedWindow("Flux Tensor", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
+//    namedWindow("Split Gaussian", CV_WINDOW_AUTOSIZE); //create a window with the name "Flux Tensor"
+//    namedWindow("output", CV_WINDOW_AUTOSIZE);
+    long int start = getTickCount();
+    for (int i = BUFFER_SIZE + OMITTED_FRAMES; i < 100; i++) { //loop over frames
         sprintf(filename, "in%06d.jpg", i+1);
         nextFrame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
 
@@ -329,32 +325,39 @@ int FTSG(string path) {
         mog(frame,bgMask,0.004);
         threshold(tensor, tensorBin, 0.036, 1, THRESH_BINARY);
         threshold(bgMask, bgMaskBin, 150, 1, THRESH_BINARY);
-        morphologyEx(bgMaskBin, bgMaskBinOpen, MORPH_OPEN, strel);
-        bgMaskBinOpen.convertTo(bgMaskBinOpen, tensorBin.type());
-        bitwise_and(tensorBin, bgMaskBinOpen, moving); //moving object detection
-//        bitwise_xor(tensorBin, bgMaskBinOpen, amb); //ambiguous regions detection
-//        amb.convertTo(amb, tensorBin.type());
-//        bitwise_and(amb, bgMaskBinOpen, amb);
-//        mog.getBackgroundImage(bg);
-//        bgDiff = abs(frame - bg);
-//        cvtColor(bgDiff, fgMask, COLOR_BGR2GRAY);
-//        threshold(fgMask, fgMaskBin, 2, 1, THRESH_BINARY);
-//        amb.convertTo(amb, fgMaskBin.type());
-//        bitwise_and(fgMaskBin, amb, fgMaskBin); //static foreground mask
-//        fgMaskBin.convertTo(fgMaskBin, moving.type());
-//        bitwise_or(moving, fgMaskBin, output);
-        imshow("oryg", frame);
-        imshow("Flux Tensor", tensorBin);
-        imshow("Split Gaussian", bgMaskBinOpen);
-        imshow("output", moving);
-        waitKey(1);
+        bgMaskBin.convertTo(bgMaskBin, tensorBin.type());
+        bitwise_and(tensorBin, bgMaskBin, moving); //moving object detection
+        bitwise_xor(tensorBin, bgMaskBin, amb); //ambiguous regions detection
+        amb.convertTo(amb, tensorBin.type());
+        bitwise_and(amb, bgMaskBin, amb);
+        mog.getBackgroundImage(bg);
+        bgDiff = abs(frame - bg);
+        cvtColor(bgDiff, fgMask, COLOR_BGR2GRAY);
+        threshold(fgMask, fgMaskBin, 2, 1, THRESH_BINARY);
+        amb.convertTo(amb, fgMaskBin.type());
+        bitwise_and(fgMaskBin, amb, fgMaskBin); //static foreground mask
+        fgMaskBin.convertTo(fgMaskBin, moving.type());
+        bitwise_or(moving, fgMaskBin, output);
+        morphologyEx(moving, movingOpen, MORPH_OPEN, strel);
+//        imshow("oryg", frame);
+//        imshow("Flux Tensor", tensorBin);
+//        imshow("Split Gaussian", bgMaskBinOpen);
+//        imshow("output", output);
+//        waitKey(1);
+//        sprintf(filename, "out%06d.jpg", i);
+//        movingOpen = 255 * movingOpen;
+//        imwrite(path + "outputFTSG/" + filename, movingOpen);
         swap(frame, nextFrame);
     }
-    waitKey(0);
-    destroyWindow("oryg"); //destroy the window with the name, "Flux Tensor"
-    destroyWindow("Flux Tensor"); //destroy the window with the name, "Flux Tensor"
-    destroyWindow("Split Gaussian"); //destroy the window with the name, "Split Gaussian"
-    destroyWindow("output");
+//    waitKey(0);
+//    destroyWindow("oryg"); //destroy the window with the name, "Flux Tensor"
+//    destroyWindow("Flux Tensor"); //destroy the window with the name, "Flux Tensor"
+//    destroyWindow("Split Gaussian"); //destroy the window with the name, "Split Gaussian"
+//    destroyWindow("output");
+
+    long int end = getTickCount();
+    cout << path << " FTSG time: " << end-start << endl;
+    return 0;
 
 }
 int CwisarDH(string path) {
@@ -364,6 +367,10 @@ int CwisarDH(string path) {
     sprintf(filename, "in%06d.jpg", 1);
     frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
     int width = frame.cols, height = frame.rows, size = pow(2,12);
+    if(width * height > 200000) {
+        cout << "Not enough memory" << endl;
+        return -1;
+    }
     Mat out(height, width, CV_8UC1), outOpen;
     Mat strel = getStructuringElement(MORPH_ELLIPSE, Size(3,3), Point(1,1));
     vector<Vec3b>** histBuff;
@@ -414,11 +421,14 @@ int CwisarDH(string path) {
         }
         sprintf(filename, "in%06d.jpg", i+1);
         frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
-        cout << endl << i << endl;
+//        cout << endl << i << endl;
     }
 //    namedWindow("input", CV_WINDOW_AUTOSIZE);
 //    namedWindow("output", CV_WINDOW_AUTOSIZE);
-    for (int i = BUFFER_SIZE + OMITTED_FRAMES; i < sampleCount; i++) {
+    cout << "start" << endl;
+    int64 st = getTickCount();
+    long int start = getTickCount();
+    for (int i = BUFFER_SIZE + OMITTED_FRAMES; i < 100; i++) {
         out = Mat::zeros(height, width, CV_8UC1);
         ushort address[36];
         ushort ind, pos;
@@ -434,7 +444,7 @@ int CwisarDH(string path) {
                         similCount++;
                     }
                 }
-                if (similCount < 34) {
+                if (similCount < 29) {
                     out.at<uchar>(y,x) = 255;
                     histBuff[y][x].push_back(ptr);
                     if (histBuff[y][x].size() > histBuffSize) { //history buffer learning
@@ -465,12 +475,16 @@ int CwisarDH(string path) {
 //        imshow("input", frame);
 //        imshow("output", outOpen);
 //        waitKey(1);
-        sprintf(filename, "out%06d.jpg", i);
-		imwrite(path + "outputCwisarDH/" + filename, outOpen);
+//        sprintf(filename, "out%06d.jpg", i);
+//		imwrite(path + "outputCwisarDH/" + filename, outOpen);
         sprintf(filename, "in%06d.jpg", i+1);
         frame = imread(path + filename, CV_LOAD_IMAGE_UNCHANGED);
-        cout << endl << i << endl;
+//        cout << endl << i << endl;
     }
+    long int end = getTickCount();
+    int64 e = getTickCount();
+    cout << path << " CwisarDH time: " << end-start << endl;
+    cout << "time dword: " << e - st << endl;
     waitKey(0);
 //    destroyWindow("input");
 //    destroyWindow("output");
