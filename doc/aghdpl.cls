@@ -43,7 +43,7 @@
 \def\degreeprogramme#1 {\gdef\@degreeprogramme{#1}}
 
 
-\bibliographystyle{abbrv}
+\bibliographystyle{unsrtnat}
 \linespread{1.3}
 \renewcommand{\labelitemi}{--}
 

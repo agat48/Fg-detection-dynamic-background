@@ -1,17 +1,23 @@
-\chapter{Testy rozwiązań}
+\chapter{Ewaluacja opisanych rozwiązań}
 \label{cha:testy}
 \renewcommand{\tablename}{Tabela}
 
-W celu ewaluacji działania opisanych w rozdziale \ref{cha:analiza} metod detekcji przeprowadzone zostały testy każdego z rozwiązań. Miały one na celu zbadać nie tylko dokładność detekcji, ale także i szybkość wykonywania algorytmu. Jest ona szczególnie ważna ze względu na konieczność przetwarzania danych z kamery wizyjnej w czasie rzeczywistym oraz możliwość realizacji rozwiązania na urządzeniach wbudowanych, np. w tzw. inteligentnych kamerach (ang. \textit{smart camera}). 
+W celu oceny sposobu działania opisanych w rozdziale \ref{cha:analiza} metod detekcji przeprowadzone zostały testy każdego z rozwiązań. Miały one na celu zbadać nie tylko dokładność detekcji, ale także i szybkość wykonywania algorytmu. Jest ona szczególnie ważna ze względu na konieczność przetwarzania danych z kamery w czasie rzeczywistym oraz możliwość realizacji rozwiązania na urządzeniach wbudowanych, np. w tzw. inteligentnych kamerach (ang. \textit{smart camera}). 
 \paragraph{}
-Do przeprowadzenia testów użyte zostały sekwencje ze strony changedetection.net, dotyczące dynamicznego ruchu na scenie oraz zbiory podstawowych nagrań (ze statycznym tłem). Zmierzona została szybkość detekcji, wyrażana jako ilość przetworzonych ramek na sekundę (ang. \textit{fps - frames per second}). W oparciu o ręcznie wyznaczane dla każdej ramki modele referencyjne (\textit{groundtruth}) przeprowadzona została także analiza skuteczności rozpatrywanych rozwiązań. Polegała ona na wyznaczeniu wartości:
+Do przeprowadzenia testów użyte zostały sekwencje ze strony changedetection.net, dotyczące dynamicznego ruchu na scenie oraz zbiory podstawowych nagrań (ze statycznym tłem). Zmierzona została szybkość detekcji, wyrażana jako średnia liczba przetworzonych ramek na sekundę (ang. \textit{fps - frames per second}). W oparciu o ręcznie wyznaczane dla każdej ramki modele referencyjne (\textit{groundtruth}) przeprowadzona została także analiza skuteczności rozpatrywanych rozwiązań. Polegała ona na wyznaczeniu wartości:
 \begin{itemize}
 \item TP - \textit{True Positives}, czyli liczby pikseli zaklasyfikowanych poprawnie jako pierwszy plan
-\item FP - \textit{False Positives} - liczby pikseli wykrytych jako pierwszy plan, jednak w modelu referencyjnym będące tłem
-\item TN - \textit{True Negatives} - ilości zgodnych z modelem klasyfikacji pikseli tła
+\item FP - \textit{False Positives} - liczba pikseli błędnie wykryta jako pierwszy plan
+\item TN - \textit{True Negatives} - liczba pikseli poprawnie wykrytych jako tło
 \item FN - \textit{False Negatives}, oznaczającego liczbę pikseli z obszarów, na których nie został wykryty ruch pomimo przemieszczenia obiektów sceny
 \end{itemize}
-Wartość $F$ wyznaczana na podstawie wzorów:
+Na podstawie wymienionych wartości można obliczyć szereg współczynników, które świadczą o stopniu poprawności działania algorytmu. Są to:
+\begin{itemize}
+\item $P$ - stosunek liczby poprawnych detekcji pikseli pierwszego planu do całkowitej liczby wykrytych pikseli
+\item $R$ -  stosunek liczby poprawnych detekcji pikseli do całkowitej liczby pikseli pierwszego planu w modelu referencyjnym (\textit{groundtruth})
+\item $F$ - wskaźnik stopnia poprawności detekcji wyznaczany na podstawie wartości $P$ i $R$
+\end{itemize}
+przy pomocy wzorów zapisane jako:
 \begin{align}
 \begin{split}
 P &= \frac{TP}{TP+FP} \\
@@ -19,13 +25,11 @@ R &= \frac{TP}{TP+FN} \\
 F &= \frac{2PR}{P+R}
 \end{split}
 \end{align}
-jest wskaźnikiem stopnia poprawności detekcji.
-\\
 
 \section{Wyniki}
-Wszystkie testy przeprowadzone zostały na maszynie z procesorem Intel\textregistered Core\texttrademark i3 2.13 GHz i 3 GB RAM. Implementacje algorytmów przetwarzają dane sekwencyjnie.
+Wszystkie testy przeprowadzone zostały na maszynie z procesorem Intel\textregistered Core\texttrademark i3 2.13 GHz i 3 GB RAM.
 \paragraph{}
-Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algorytmu CwisarDH w przypadku zestawów \textit{PETS2006} (tabela \ref{tab:resultsPETS2006}) oraz \textit{fall} (tabela \ref{tab:resultsFall}) nie udało się uzyskać wyników metody. Dla nagrania o wymiarach 720 x 480 (720 x 576 w przypadku nagrania \textit{PETS2006}) na dyskryminatory należy przydzielić $720 \cdot 480 \cdot 2^{16}$ bitów, a więc przynajmniej 2,64 GB RAM-u, czyli 92\% pamięci dostępnej sprzętowo, co uniemożliwia obliczenia.
+Ze względu na ograniczenia sprzętowe oraz wysokie wymagania pamięciowe algorytmu CwisarDH w przypadku zestawów \textit{PETS2006} (tabela \ref{tab:resultsPETS2006}) oraz \textit{fall} (tabela \ref{tab:resultsFall}) nie udało się uzyskać wyników. Dla nagrania o wymiarach 720 x 480 (720 x 576 w przypadku nagrania \textit{PETS2006}) na dyskryminatory należy przydzielić $720 \cdot 480 \cdot 2^{16}$ bitów, a więc przynajmniej 2,64 GB RAM-u, czyli 92\% pamięci dostępnej sprzętowo, co uniemożliwia prowadzenie obliczeń.
 
 \subsection{Statyczne tło}
 ~
