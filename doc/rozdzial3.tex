@@ -53,20 +53,20 @@ J_{F} =
 \int_\Omega \left\{\frac{\partial^2I}{\partial t^2}\right\}^2 \mathrm{d}y
 \end{bmatrix}
 \end{equation}
-Uzyskane w ten sposób elementy macierzy tensora zawierają informacje na temat czasowych zmian gradientu (pola wektorowego, wskazującego kierunki najszybszych wzrostów wartości pola skalarnego, w tym wypadku - obrazu) na scenie. Pozwala to na prostą klasyfikację obiektów jako poruszające się bądź statyczne - im większa wartość wskaźnika, tym szybciej piksel zmienia swoje położenie.\\
-Z tego też powodu ślad tensora przepływu, zapisany jako:
+Uzyskane w ten sposób elementy macierzy tensora zawierają informacje na temat czasowych zmian gradientu (pola wektorowego, wskazującego kierunki najszybszych wzrostów wartości pola skalarnego, w tym wypadku - obrazu) na scenie. Pozwala to na prostą klasyfikację obiektów jako poruszające się bądź statyczne - im większa wartość wskaźnika, tym szybciej piksel zmienia swoje położenie. Z tego też powodu ślad tensora przepływu, zapisany jako:
 \begin{equation}
 tr(J_{F}) = 
 \int_\Omega ||\frac{\partial}{\partial t}\nabla I||^2\mathrm{d}y
 \end{equation}
 gdzie:\\ 
 \hspace*{3em}
-\begin{tabular}{r l}
+\begin{tabular}{r p{0.8\textwidth}}
 $\nabla I$: &  gradient obrazu
 \end{tabular} \\
+~\\
 może zostać bezpośrednio wykorzystany do klasyfikacji pikseli jako należących do obiektu poruszającego się bądź statycznego.
 \paragraph{}
-\textbf{Przepływ optyczny} (ang. \textit{optical flow}) pozwala badać zmianę położenia poszczególnych pikseli pomiędzy ramkami nagrania. Dla dwuwymiarowej przestrzeni prezentowany jest on w postaci wektorów przemieszczenia, których współrzędne x i y zapisywane są w dwóch osobnych macierzach. Ponieważ zagadnienie obliczania przepływu nie należy do trywialnych, przy wyborze odpowiedniej metody istotne jest uwzględnienie typu danych wejściowych - rozwiązania zaproponowane dla obrazów barwnych często różnią się znacząco od tych dla scen w skali szarości. W bibliotece OpenCV dostępnych jest kilka funkcji służących do obliczania przepływu optycznego. Choć testowane nagrania zawierają informację o kolorze, dla potrzeb szybszego przetwarzania przeprowadzono operacje dla każdego z kanałów osobno - algorytmy obliczania przepływu optycznego dla obrazów wielokanałowych działają kilkakrotnie wolniej, co zdecydowanie pogarsza wydajność algorytmu. Z tego też powodu używana na początku metoda \textit{calcOpticalFlowSF()}, operująca na zdjęciach barwnych, zastąpiona została algorytmem \textit{calcOpticalFlowFarneback()}. 
+\textbf{Przepływ optyczny} (ang. \textit{optical flow}) pozwala badać zmianę położenia poszczególnych pikseli pomiędzy ramkami nagrania. Dla dwuwymiarowej przestrzeni prezentowany jest on w postaci wektorów przemieszczenia, których współrzędne x i y zapisywane są w dwóch osobnych macierzach. Ponieważ zagadnienie obliczania przepływu nie należy do trywialnych, przy wyborze odpowiedniej metody istotne jest uwzględnienie typu danych wejściowych - rozwiązania zaproponowane dla obrazów barwnych często różnią się znacząco od tych dla scen w skali szarości. W bibliotece OpenCV dostępnych jest kilka funkcji służących do obliczania przepływu optycznego. Choć testowane nagrania zawierają informację o kolorze, dla potrzeb szybszego przetwarzania w implementacji omawianego w tej sekcji rozwiązania przeprowadzono operacje dla każdego z kanałów osobno. Wynika to z faktu, iż wstępna ewaluacja programu wykorzystującego metodę \textit{calcOpticalFlowSF()}, operującą na zdjęciach barwnych wykazała, iż algorytmy obliczania przepływu optycznego dla obrazów wielokanałowych działają kilkakrotnie wolniej. Ponieważ wydajność metody jest bardzo ważnym aspektem, używana na początku funkcja zastąpiona została algorytmem \textit{calcOpticalFlowFarneback()}. 
 \paragraph{}
 W implementacji rozwiązania postanowiono wykorzystać opisane wyżej własności i przedstawić tensor przepływu w postaci macierzy wariancji czasowych wartości przepływu optycznego dla każdego piksela. Obliczanie poszczególnych wartości w ramce $t$ odbywa się zgodnie ze wzorem:
 \begin{equation}
@@ -74,11 +74,11 @@ F_{t}(x) = \frac{1}{N}\sum_{i=1}^{N} (O_{i}(x)-\mu_{t}(x))^2
 \end{equation}
 gdzie:\\ 
 \hspace*{3em}
-\begin{tabular}{r l}
+\begin{tabular}{r p{0.8\textwidth}}
 $O_{n}(x)$: &  $n$-ta próbka przepływu optycznego wyliczonego dla piksela $x$ przedstawiona w postaci dwuelementowego wektora\\
 $\mu_{t}(x)$: & wartość średnia przepływu, wyrażana jako wektor średniego przemieszczenia w płaszczyźnie x,y 
 \end{tabular} \\
-
+~\\
 $N$ próbek przepływu przechowywanych jest w buforze, są one uaktualniane dla każdej nowej ramki. Na rysunku \ref{fig:FT} przedstawiony jest przykładowy wynik detekcji uzyskany przy pomocy tej metody.
 
 \begin{figure}[!h]
@@ -104,10 +104,12 @@ D_{min}(x,y) = \min_{i\in K}\max_{j\in C}((I_{t}(x,y)-\mu_{i,j})^2-T_{b}\cdot\si
 \end{equation}
 gdzie:\\ 
 \hspace*{3em}
-\begin{tabular}{r l}
+\begin{tabular}{r p{0.8\textwidth}}
 $T_{b}$: &  ustalony próg, oznaczający liczbę odchyleń standardowych\\
 $\sigma$: & odchylenie standardowe, $\sigma = \sum_{i}^{k}\omega_{i}\sigma_{i}$
-\end{tabular} \\
+\end{tabular} 
+~\\
+~\\
 Piksel przypisany zostaje do modelu tła jeśli pasuje do któregokolwiek z rozkładów gaussa. Oznacza to, że każdemu pikselowi odpowiadać będzie $K\times C$ modeli Gaussa, gdzie $C$ oznacza liczbę kanałów - dla modelu RGB $C = 3$. Uproszczeniem jest stosowanie takiej samej wagi $\omega$ i wariancji $\sigma$ dla wszystkich kanałów.
 \paragraph{}
 Do reprezentacji pierwszego planu używany jest pojedynczy model. Służy on do rozróżniania obiektów zatrzymanych i niejednoznacznych detekcji, będących skutkiem szumu. Te drugie występują w obszarach, które zostały zaklasyfikowane jako tło przez FT, natomiast SG wykrył je jako pierwszy plan. Przyporządkowywanie tak wyodrębnionych pikseli do modelu pierwszego planu następuje, jeśli różnica między nimi a odpowiadającymi im średnimi wartościami jasności na obrazie jest mniejsza od ustalonego progu.
@@ -121,7 +123,7 @@ M = (1-F_{B})\cup(F_{amb}-F_{S})
 \end{gather}
 gdzie:\\ 
 \hspace*{3em}
-\begin{tabular}{r l}
+\begin{tabular}{r p{0.8\textwidth}}
 $M$: &  maska aktualizacji\\
 $\alpha$: & parametr uczenia się algorytmu\\
 $F_{B}$ : & model pierwszego planu uzyskany za pomocą SG\\
@@ -329,7 +331,7 @@ d(x)=\left\{
 \end{equation}
 przy czym:\\ 
 \hspace*{3em}
-\begin{tabular}{r l}
+\begin{tabular}{r p{0.8\textwidth}}
 $T_{d}$ : &  próg podobieństwa\\
 $i_{p}$ : & analizowany piksel sąsiedztwa $P$\\
 $i_{c}$ : & piksel centralny obszaru\\
@@ -352,7 +354,7 @@ L_{f}(x,y)=\left\{
 \end{equation}
 gdzie:\\ 
 \hspace*{3em}
-\begin{tabular}{r l}
+\begin{tabular}{r p{0.8\textwidth}}
 H() : &  odległość Hamminga (wektorowa miara odmienności dwóch ciągów takiej samej długości)\\
 $T_{h}$ : & próg odległości\\
 \end{tabular} \\
@@ -374,10 +376,12 @@ D_{min}(x) = D_{min}(x)\cdot (1-\alpha)+d_{t}(x)\cdot \alpha
 \end{equation}
 gdzie:\\ 
 \hspace*{3em}
-\begin{tabular}{r l}
+\begin{tabular}{r p{0.8\textwidth}}
 $\alpha$ : &  parametr uczący\\
 $d_{t}(x)$ : & minimalna odległość między reprezentacją piksela $I(x)$ a wartościami zawartymi w $B(x)$
-\end{tabular} \\
+\end{tabular} 
+~\\
+~\\
 Aktualizacja $D_{min}$ odbywa się każdorazowo, niezależnie od wyniku klasyfikacji piksela, co umożliwia lepszą detekcję w przypadku dynamicznych scenariuszy.
 \paragraph{}
 Kolejne równanie opisuje dynamiczną zmianę progu klasyfikacji dla piksela:
